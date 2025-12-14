@@ -531,7 +531,12 @@ export default function App() {
 
         {/* CORRELATION VIEW CONTAINER */}
         <div className={view === 'correlation' ? 'block' : 'hidden'}>
-          <CryptoCorrelationPro apiKey={apiKey} />
+          <CryptoCorrelationPro 
+            apiKey={apiKey} 
+            onRequireKey={() => setShowApiKeyModal(true)}
+            currency={currency}
+            rate={rates[currency]}
+          />
         </div>
 
         <div className="print:hidden mt-12">

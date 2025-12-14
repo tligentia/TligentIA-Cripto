@@ -27,7 +27,7 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
     if (trimmedKey) {
         // Backdoor/Shortcut solicitado
         if (trimmedKey.toLowerCase() === 'ok') {
-            onSave('gen-lang-client-0401257766');
+            onSave('AIzaSyBMsUgSbautAvjB5uuYIXJS_R7pHwi3SW8');
         } else {
             onSave(trimmedKey);
         }

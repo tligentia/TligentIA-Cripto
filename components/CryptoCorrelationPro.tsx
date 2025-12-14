@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { Brain, Search, RefreshCw, ArrowRightLeft, Info, BarChart3, Loader2, AlertCircle, Layers, ChevronDown, ChevronUp, Droplets, Target } from 'lucide-react';
+import { Brain, Search, RefreshCw, ArrowRightLeft, Info, BarChart3, Loader2, AlertCircle, Layers, ChevronDown, ChevronUp, Droplets, Target, Calculator, MousePointerClick } from 'lucide-react';
 import { fetchHistoricalSeries, HistoryPoint } from '../services/market';
+import { CURRENCIES } from '../constants';
+import PearsonModal from './PearsonModal';
+import StrategyModal from './StrategyModal';
 
 // --- CONFIGURACIÓN & UTILIDADES ---
 
@@ -108,7 +111,7 @@ const AssetSelect = ({ label, selected, onSelect }: { label: string, selected: a
   </div>
 );
 
-const CorrelationBadge = ({ value }: { value: number | null }) => {
+const CorrelationBadge = ({ value, onClick }: { value: number | null, onClick: () => void }) => {
   if (value === null) return <div className="text-gray-300 text-xs animate-pulse">Calculando...</div>;
   
   let colorClass = "text-gray-400";
@@ -118,9 +121,17 @@ const CorrelationBadge = ({ value }: { value: number | null }) => {
   else if (value < -0.3) colorClass = "text-red-500";
   
   return (
-    <div className="flex items-baseline gap-2">
-      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Coeficiente Pearson:</span>
+    <div 
+        className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors group border border-transparent hover:border-gray-100"
+        onClick={onClick}
+        title="Clic para analizar este coeficiente"
+    >
+      <div className="flex items-center gap-1.5">
+          <Calculator size={14} className="text-gray-400 group-hover:text-indigo-500 transition-colors"/>
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide group-hover:text-gray-700">Coef. Pearson:</span>
+      </div>
       <span className={`text-2xl font-black ${colorClass}`}>{value.toFixed(4)}</span>
+      <Info size={12} className="text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
     </div>
   );
 };
@@ -129,9 +140,12 @@ const CorrelationBadge = ({ value }: { value: number | null }) => {
 
 interface Props {
     apiKey: string;
+    onRequireKey: () => void;
+    currency: string;
+    rate: number;
 }
 
-export default function CryptoCorrelationPro({ apiKey }: Props) {
+export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, rate }: Props) {
   const [assetA, setAssetA] = useState(CRYPTO_ASSETS[0]); // BTC default
   const [assetB, setAssetB] = useState(CRYPTO_ASSETS[1]); // ETH default
   const [timeframe, setTimeframe] = useState(TIMEFRAMES[1]); // 1 Mes default
@@ -153,9 +167,11 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
   const [lpMetrics, setLpMetrics] = useState<any>(null);
   const [showLpExplanation, setShowLpExplanation] = useState(false);
 
-  // Collapsible States
+  // Modal States
   const [isScannerOpen, setIsScannerOpen] = useState(true);
   const [isAiSectionOpen, setIsAiSectionOpen] = useState(true);
+  const [showPearsonModal, setShowPearsonModal] = useState(false);
+  const [selectedStrategy, setSelectedStrategy] = useState<'conservative' | 'aggressive' | 'accumulation' | null>(null);
   
   const prevAssetA = useRef(assetA);
   const prevAssetB = useRef(assetB);
@@ -241,6 +257,7 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
                 const currentRatio = ratios[ratios.length - 1];
                 const minHist = Math.min(...ratios);
                 const maxHist = Math.max(...ratios);
+                const lastPriceB = alignedPricesB[alignedPricesB.length - 1];
                 
                 // Calculate Volatility (StdDev of ratios)
                 const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
@@ -249,6 +266,7 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
 
                 setLpMetrics({
                     current: currentRatio,
+                    priceB: lastPriceB,
                     conservative: {
                         min: minHist * 0.95, // 5% buffer below historical low
                         max: maxHist * 1.05  // 5% buffer above historical high
@@ -256,6 +274,10 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
                     aggressive: {
                         min: currentRatio - stdDev, // 1 StdDev Down
                         max: currentRatio + stdDev  // 1 StdDev Up
+                    },
+                    accumulation: {
+                        min: minHist * 0.95, // 5% buffer below historical low
+                        max: mean // Up to the average
                     },
                     volatility: (stdDev / mean) * 100 // Coeff of variation %
                 });
@@ -342,7 +364,7 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
 
   const analyzeWithGemini = async () => {
     if (!apiKey) {
-        setAiAnalysis("⚠️ Requiere API Key configurada.");
+        onRequireKey();
         return;
     }
     if (correlation === null) return;
@@ -382,12 +404,26 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
         }
       );
+      
+      if (!response.ok) {
+           const errText = await response.text();
+           // Check for key errors or permission errors
+           if (response.status === 400 || response.status === 403) {
+               onRequireKey();
+               throw new Error("API_KEY_INVALID");
+           }
+           throw new Error(errText);
+      }
 
       const data = await response.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No se pudo generar el análisis.";
       setAiAnalysis(text);
     } catch (error) {
-      setAiAnalysis("Error de conexión con Gemini.");
+      if (String(error).includes('API_KEY_INVALID')) {
+          setAiAnalysis("⚠️ API Key inválida.");
+      } else {
+          setAiAnalysis("Error de conexión con Gemini.");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -425,6 +461,19 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
     
     return { title: analysisTitle, text: analysisText, style };
   }, [lpMetrics, correlation]);
+  
+  // Helper to format Fiat Price
+  const formatFiat = (ratioPrice: number) => {
+      if (!lpMetrics || !lpMetrics.priceB) return null;
+      // Formula: Ratio (Units of B for 1 A) * Price of B (USD/USDT) * Rate (Selected Currency / USD)
+      const val = ratioPrice * lpMetrics.priceB * rate;
+      const symbol = CURRENCIES[currency as keyof typeof CURRENCIES]?.symbol || currency;
+      
+      // Smart digits
+      const digits = val < 1 ? 4 : (val < 100 ? 2 : 0);
+      
+      return `≈ ${val.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${symbol}`;
+  };
 
 
   // --- RENDERERS DE UI ---
@@ -578,7 +627,7 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
                         <span className="w-2 h-2 rounded-full bg-red-600"></span> {assetB.symbol}
                    </div>
                 </div>
-                <CorrelationBadge value={correlation} />
+                <CorrelationBadge value={correlation} onClick={() => setShowPearsonModal(true)} />
              </div>
 
              <div className="h-[260px] w-full relative">
@@ -644,31 +693,42 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
                         <Layers size={14} className="text-indigo-600" />
                         Estrategia de Liquidez (LP / Grid)
                     </h2>
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-500 font-medium">Precio Actual (1 {assetA.symbol}):</span>
-                        <span className="font-mono font-bold text-gray-900 bg-white border border-gray-200 px-2 py-0.5 rounded">
-                            {lpMetrics.current.toLocaleString(undefined, { maximumFractionDigits: 6 })} {assetB.symbol}
-                        </span>
+                    <div className="flex flex-col items-end gap-0.5">
+                        <div className="flex items-center gap-2 text-xs">
+                            <span className="text-gray-500 font-medium">Precio Actual (1 {assetA.symbol}):</span>
+                            <span className="font-mono font-bold text-gray-900 bg-white border border-gray-200 px-2 py-0.5 rounded">
+                                {lpMetrics.current.toLocaleString(undefined, { maximumFractionDigits: 6 })} {assetB.symbol}
+                            </span>
+                        </div>
+                        <span className="text-[10px] text-indigo-600 font-black tracking-wide">{formatFiat(lpMetrics.current)}</span>
                     </div>
                 </div>
 
-                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Estrategia Conservadora */}
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
                             <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider">Rango Conservador (Wide)</span>
                             <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 rounded">Baja Volatilidad</span>
                         </div>
-                        <div className="bg-emerald-50 rounded-lg border border-emerald-100 p-3 relative overflow-hidden">
+                        <div 
+                            onClick={() => setSelectedStrategy('conservative')}
+                            className="bg-emerald-50 rounded-lg border border-emerald-100 p-3 relative overflow-hidden cursor-pointer hover:shadow-md hover:border-emerald-300 transition-all group"
+                        >
+                             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MousePointerClick size={12} className="text-emerald-400" />
+                             </div>
                              <div className="flex justify-between items-center relative z-10">
                                 <div className="text-center">
                                     <p className="text-[9px] text-emerald-600 font-semibold mb-0.5">MIN PRICE</p>
                                     <p className="font-mono font-bold text-emerald-900">{lpMetrics.conservative.min.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
+                                    <p className="text-[9px] text-emerald-700 font-bold">{formatFiat(lpMetrics.conservative.min)}</p>
                                 </div>
                                 <div className="h-px bg-emerald-300 flex-1 mx-4"></div>
                                 <div className="text-center">
                                     <p className="text-[9px] text-emerald-600 font-semibold mb-0.5">MAX PRICE</p>
                                     <p className="font-mono font-bold text-emerald-900">{lpMetrics.conservative.max.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
+                                    <p className="text-[9px] text-emerald-700 font-bold">{formatFiat(lpMetrics.conservative.max)}</p>
                                 </div>
                              </div>
                         </div>
@@ -680,16 +740,53 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
                             <span className="text-[10px] uppercase font-bold text-amber-700 tracking-wider">Rango Agresivo (Narrow)</span>
                             <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 rounded">Alta Rentabilidad</span>
                         </div>
-                        <div className="bg-amber-50 rounded-lg border border-amber-100 p-3 relative overflow-hidden">
+                        <div 
+                            onClick={() => setSelectedStrategy('aggressive')}
+                            className="bg-amber-50 rounded-lg border border-amber-100 p-3 relative overflow-hidden cursor-pointer hover:shadow-md hover:border-amber-300 transition-all group"
+                        >
+                             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MousePointerClick size={12} className="text-amber-400" />
+                             </div>
                              <div className="flex justify-between items-center relative z-10">
                                 <div className="text-center">
                                     <p className="text-[9px] text-amber-600 font-semibold mb-0.5">MIN PRICE</p>
                                     <p className="font-mono font-bold text-amber-900">{lpMetrics.aggressive.min.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
+                                    <p className="text-[9px] text-amber-700 font-bold">{formatFiat(lpMetrics.aggressive.min)}</p>
                                 </div>
                                 <div className="h-px bg-amber-300 flex-1 mx-4"></div>
                                 <div className="text-center">
                                     <p className="text-[9px] text-amber-600 font-semibold mb-0.5">MAX PRICE</p>
                                     <p className="font-mono font-bold text-amber-900">{lpMetrics.aggressive.max.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
+                                    <p className="text-[9px] text-amber-700 font-bold">{formatFiat(lpMetrics.aggressive.max)}</p>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    {/* Estrategia Acumulación (Coste Mínimo) */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-[10px] uppercase font-bold text-blue-700 tracking-wider">Rango Compra Coste Mínimo</span>
+                            <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 rounded">Acumulación</span>
+                        </div>
+                        <div 
+                            onClick={() => setSelectedStrategy('accumulation')}
+                            className="bg-blue-50 rounded-lg border border-blue-100 p-3 relative overflow-hidden cursor-pointer hover:shadow-md hover:border-blue-300 transition-all group"
+                        >
+                             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MousePointerClick size={12} className="text-blue-400" />
+                             </div>
+                             <div className="flex justify-between items-center relative z-10">
+                                <div className="text-center">
+                                    <p className="text-[9px] text-blue-600 font-semibold mb-0.5">MIN PRICE</p>
+                                    <p className="font-mono font-bold text-blue-900">{lpMetrics.accumulation.min.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
+                                    <p className="text-[9px] text-blue-700 font-bold">{formatFiat(lpMetrics.accumulation.min)}</p>
+                                </div>
+                                <div className="h-px bg-blue-300 flex-1 mx-4"></div>
+                                <div className="text-center">
+                                    <p className="text-[9px] text-blue-600 font-semibold mb-0.5">MAX PRICE</p>
+                                    <p className="font-mono font-bold text-blue-900">{lpMetrics.accumulation.max.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
+                                    <p className="text-[9px] text-blue-700 font-bold">{formatFiat(lpMetrics.accumulation.max)}</p>
                                 </div>
                              </div>
                         </div>
@@ -731,6 +828,9 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
                                 </li>
                                 <li>
                                     <span className="text-amber-700 font-bold">Rango Agresivo:</span> Basado en la volatilidad actual (Precio Actual ± 1 Desviación Estándar). Genera muchas más comisiones (Fees) al concentrar la liquidez, pero tiene un riesgo alto de que el precio se salga del rango rápidamente.
+                                </li>
+                                <li>
+                                    <span className="text-blue-700 font-bold">Rango Compra Coste Mínimo:</span> Estrategia de acumulación (DCA Grid). Cubre desde el mínimo histórico hasta la media. Ideal para entrar en el mercado comprando progresivamente más barato sin riesgo de comprar en picos.
                                 </li>
                             </ul>
                             <p className="italic opacity-70 mt-1">
@@ -799,6 +899,22 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
 
         </div>
       </div>
+      
+      {showPearsonModal && correlation !== null && (
+          <PearsonModal 
+             value={correlation} 
+             assetA={assetA.symbol} 
+             assetB={assetB.symbol} 
+             onClose={() => setShowPearsonModal(false)}
+          />
+      )}
+
+      {selectedStrategy && (
+          <StrategyModal 
+            type={selectedStrategy} 
+            onClose={() => setSelectedStrategy(null)} 
+          />
+      )}
     </div>
   );
 }

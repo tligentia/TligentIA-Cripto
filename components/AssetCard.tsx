@@ -232,7 +232,9 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
         const text = await generateGeminiContent(prompt, apiKey);
         if (isMounted.current) setAiAnalysis(text);
     } catch(e) { 
-        if (String(e).includes('API_MISSING')) onRequireKey();
+        if (String(e).includes('API_MISSING') || String(e).includes('403') || String(e).includes('key')) {
+             onRequireKey();
+        }
         else if (isMounted.current) setAiAnalysis("Error de conexión con IA."); 
     } finally { 
         if (isMounted.current) setAiLoading(false); 
@@ -274,7 +276,9 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
         const text = await generateGeminiContent(prompt, apiKey);
         if (isMounted.current) setProfilesAnalysis(text);
     } catch(e) { 
-        if (String(e).includes('API_MISSING')) onRequireKey();
+        if (String(e).includes('API_MISSING') || String(e).includes('403') || String(e).includes('key')) {
+             onRequireKey();
+        }
         else if (isMounted.current) setProfilesAnalysis("Error."); 
     } finally { 
         if (isMounted.current) setProfilesLoading(false); 
@@ -298,7 +302,9 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
         const text = await generateGeminiContent(prompt, apiKey);
         if (isMounted.current) setMatrixInsight(text);
     } catch(e) { 
-        if (String(e).includes('API_MISSING')) onRequireKey();
+        if (String(e).includes('API_MISSING') || String(e).includes('403') || String(e).includes('key')) {
+             onRequireKey();
+        }
         else if (isMounted.current) setMatrixInsight("Error (Reintentar)"); 
     } finally { 
         if (isMounted.current) setMatrixLoading(false); 
