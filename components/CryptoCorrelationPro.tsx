@@ -3,45 +3,16 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Brain, Search, RefreshCw, ArrowRightLeft, Info, BarChart3, Loader2, AlertCircle, Layers, ChevronDown, ChevronUp, Droplets, Target, Calculator, MousePointerClick } from 'lucide-react';
 import { fetchHistoricalSeries, HistoryPoint } from '../services/market';
 import { CURRENCIES } from '../constants';
+import { Asset } from '../types';
 import PearsonModal from './PearsonModal';
 import StrategyModal from './StrategyModal';
 
 // --- CONFIGURACIÓN & UTILIDADES ---
 
-// Lista de activos definidos
-const CRYPTO_ASSETS = [
-  { symbol: 'BTC', name: 'Bitcoin', type: 'crypto', category: 'Store of Value / L1' },
-  { symbol: 'ETH', name: 'Ethereum', type: 'crypto', category: 'Smart Contracts L1' },
-  { symbol: 'BNB', name: 'Binance Coin', type: 'crypto', category: 'Exchange / L1' },
-  { symbol: 'SOL', name: 'Solana', type: 'crypto', category: 'High Perf L1' },
-  { symbol: 'XRP', name: 'XRP', type: 'crypto', category: 'Payments' },
-  { symbol: 'ADA', name: 'Cardano', type: 'crypto', category: 'Smart Contracts L1' },
-  { symbol: 'DOGE', name: 'Dogecoin', type: 'crypto', category: 'Meme / Payment' },
-  { symbol: 'AVAX', name: 'Avalanche', type: 'crypto', category: 'Smart Contracts L1' },
-  { symbol: 'TRX', name: 'Tron', type: 'crypto', category: 'Smart Contracts L1' },
-  { symbol: 'DOT', name: 'Polkadot', type: 'crypto', category: 'Interoperability' },
-  { symbol: 'LINK', name: 'Chainlink', type: 'crypto', category: 'Oracle' },
-  { symbol: 'MATIC', name: 'Polygon', type: 'crypto', category: 'L2 Scaling' },
-  { symbol: 'SHIB', name: 'Shiba Inu', type: 'crypto', category: 'Meme' },
-];
-
 const STABLE_ASSETS = [
   { symbol: 'USDC', name: 'USD Coin', type: 'stable', category: 'Stablecoin' },
   { symbol: 'USDT', name: 'Tether', type: 'stable', category: 'Stablecoin' },
 ];
-
-const STOCK_ASSETS = [
-  { symbol: 'SPY', name: 'S&P 500', type: 'stock', category: 'Index ETF' },
-  { symbol: 'NVDA', name: 'NVIDIA', type: 'stock', category: 'Technology / AI' },
-  { symbol: 'AAPL', name: 'Apple', type: 'stock', category: 'Technology' },
-  { symbol: 'MSFT', name: 'Microsoft', type: 'stock', category: 'Technology' },
-  { symbol: 'AMZN', name: 'Amazon', type: 'stock', category: 'Cons. Discretionary' },
-  { symbol: 'GOOGL', name: 'Google', type: 'stock', category: 'Technology' },
-  { symbol: 'META', name: 'Meta', type: 'stock', category: 'Technology' },
-  { symbol: 'TSLA', name: 'Tesla', type: 'stock', category: 'Automotive / Tech' },
-];
-
-const ALL_ASSETS = [...STABLE_ASSETS, ...CRYPTO_ASSETS, ...STOCK_ASSETS];
 
 const TIMEFRAMES = [
   { label: '1S', fullLabel: '1 Semana', days: 7 },
@@ -82,7 +53,21 @@ const calculatePearsonCorrelation = (arrX: number[], arrY: number[]) => {
 
 // --- SUB-COMPONENTS ---
 
-const AssetSelect = ({ label, selected, onSelect }: { label: string, selected: any, onSelect: (a: any) => void }) => (
+const AssetSelect = ({ 
+    label, 
+    selected, 
+    onSelect,
+    cryptoList,
+    stockList,
+    stableList
+}: { 
+    label: string, 
+    selected: any, 
+    onSelect: (a: any) => void,
+    cryptoList: any[],
+    stockList: any[],
+    stableList: any[]
+}) => (
   <div className="flex flex-col gap-0.5 w-full">
     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{label}</label>
     <div className="relative">
@@ -90,18 +75,20 @@ const AssetSelect = ({ label, selected, onSelect }: { label: string, selected: a
         className="w-full py-1.5 pl-2 pr-6 border border-gray-300 rounded bg-white text-sm font-semibold text-gray-900 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none shadow-sm appearance-none"
         value={selected.symbol}
         onChange={(e) => {
-           const found = ALL_ASSETS.find(a => a.symbol === e.target.value);
+           // We need to find the asset in ANY of the lists
+           const all = [...stableList, ...cryptoList, ...stockList];
+           const found = all.find(a => a.symbol === e.target.value);
            if (found) onSelect(found);
         }}
       >
         <optgroup label="Monedas Base (Stables)">
-          {STABLE_ASSETS.map(s => <option key={s.symbol} value={s.symbol}>{s.symbol} - {s.name}</option>)}
+          {stableList.map(s => <option key={s.symbol} value={s.symbol}>{s.symbol} - {s.name}</option>)}
         </optgroup>
         <optgroup label="Cripto Activos">
-          {CRYPTO_ASSETS.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol} - {c.name}</option>)}
+          {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol} - {c.name}</option>)}
         </optgroup>
         <optgroup label="Bolsa (Stock Market)">
-          {STOCK_ASSETS.map(s => <option key={s.symbol} value={s.symbol}>{s.symbol} - {s.name}</option>)}
+          {stockList.map(s => <option key={s.symbol} value={s.symbol}>{s.symbol} - {s.name}</option>)}
         </optgroup>
       </select>
       <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -143,11 +130,54 @@ interface Props {
     onRequireKey: () => void;
     currency: string;
     rate: number;
+    availableAssets: Asset[];
 }
 
-export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, rate }: Props) {
-  const [assetA, setAssetA] = useState(CRYPTO_ASSETS[0]); // BTC default
-  const [assetB, setAssetB] = useState(CRYPTO_ASSETS[1]); // ETH default
+export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, rate, availableAssets }: Props) {
+  
+  // -- CONSTRUCT ASSET LISTS DYNAMICALLY FROM PROPS --
+  const unifiedAssets = useMemo(() => {
+      // 1. Stables (Internal Hardcoded for usefulness)
+      const stables = STABLE_ASSETS.map(s => ({...s, type: 'stable'}));
+
+      // 2. Process User Assets from App State
+      const cryptos: any[] = [];
+      const stocks: any[] = [];
+
+      availableAssets.forEach(asset => {
+          // Avoid duplicates if stable is already in list (like USDT)
+          if (stables.some(s => s.symbol === asset.symbol)) return;
+
+          const item = { 
+              symbol: asset.symbol, 
+              name: asset.name, 
+              type: (asset.type === 'STOCK' ? 'stock' : 'crypto'), 
+              category: (asset.type === 'STOCK' ? 'User Stock' : 'User Crypto') 
+          };
+
+          if (asset.type === 'STOCK') {
+              stocks.push(item);
+          } else {
+              cryptos.push(item);
+          }
+      });
+
+      // Remove duplicates by symbol just in case
+      const uniqueCryptos = Array.from(new Map(cryptos.map(item => [item.symbol, item])).values());
+      const uniqueStocks = Array.from(new Map(stocks.map(item => [item.symbol, item])).values());
+
+      return {
+          stables,
+          cryptos: uniqueCryptos,
+          stocks: uniqueStocks,
+          all: [...stables, ...uniqueCryptos, ...uniqueStocks]
+      };
+  }, [availableAssets]);
+
+  // Initial State: use the first available items
+  const [assetA, setAssetA] = useState(unifiedAssets.cryptos.length > 0 ? unifiedAssets.cryptos[0] : unifiedAssets.stables[0]);
+  const [assetB, setAssetB] = useState(unifiedAssets.cryptos.length > 1 ? unifiedAssets.cryptos[1] : (unifiedAssets.stocks[0] || unifiedAssets.stables[1]));
+
   const [timeframe, setTimeframe] = useState(TIMEFRAMES[1]); // 1 Mes default
   
   const [chartData, setChartData] = useState<any[]>([]);
@@ -184,6 +214,8 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
   }, [assetA]);
 
   useEffect(() => {
+    if (!assetA || !assetB) return;
+
     const loadRealData = async () => {
         setIsLoadingData(true);
         setAiAnalysis('');
@@ -305,7 +337,8 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
     setIsScannerOpen(true);
     
     // Filtramos para no compararse a si mismo
-    const targets = ALL_ASSETS.filter(a => a.symbol !== assetA.symbol);
+    // USAMOS unifiedAssets.all para iterar sobre TODOS los activos disponibles
+    const targets = unifiedAssets.all.filter(a => a.symbol !== assetA.symbol);
     const results: any[] = [];
     
     // Obtenemos Data A una vez
@@ -499,7 +532,14 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
             {/* Central Controls */}
             <div className="flex flex-1 items-end gap-2 max-w-2xl w-full">
                 <div className="flex-1">
-                    <AssetSelect label="Activo A" selected={assetA} onSelect={setAssetA} />
+                    <AssetSelect 
+                        label="Activo A" 
+                        selected={assetA} 
+                        onSelect={setAssetA} 
+                        cryptoList={unifiedAssets.cryptos}
+                        stockList={unifiedAssets.stocks}
+                        stableList={unifiedAssets.stables}
+                    />
                 </div>
                 
                 <div className="pb-2 text-gray-300">
@@ -507,7 +547,14 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                 </div>
 
                 <div className="flex-1">
-                    <AssetSelect label="Activo B" selected={assetB} onSelect={setAssetB} />
+                    <AssetSelect 
+                        label="Activo B" 
+                        selected={assetB} 
+                        onSelect={setAssetB} 
+                        cryptoList={unifiedAssets.cryptos}
+                        stockList={unifiedAssets.stocks}
+                        stableList={unifiedAssets.stables}
+                    />
                 </div>
 
                 <div className="flex flex-col gap-0.5 ml-2">

@@ -536,6 +536,7 @@ export default function App() {
             onRequireKey={() => setShowApiKeyModal(true)}
             currency={currency}
             rate={rates[currency]}
+            availableAssets={assets}
           />
         </div>
 
