@@ -23,8 +23,8 @@ const CRYPTO_ASSETS = [
 ];
 
 const STABLE_ASSETS = [
-  { symbol: 'USDT', name: 'Tether', type: 'stable', category: 'Stablecoin' },
   { symbol: 'USDC', name: 'USD Coin', type: 'stable', category: 'Stablecoin' },
+  { symbol: 'USDT', name: 'Tether', type: 'stable', category: 'Stablecoin' },
 ];
 
 const STOCK_ASSETS = [
@@ -38,7 +38,7 @@ const STOCK_ASSETS = [
   { symbol: 'TSLA', name: 'Tesla', type: 'stock', category: 'Automotive / Tech' },
 ];
 
-const ALL_ASSETS = [...CRYPTO_ASSETS, ...STABLE_ASSETS, ...STOCK_ASSETS];
+const ALL_ASSETS = [...STABLE_ASSETS, ...CRYPTO_ASSETS, ...STOCK_ASSETS];
 
 const TIMEFRAMES = [
   { label: '1S', fullLabel: '1 Semana', days: 7 },
@@ -91,14 +91,14 @@ const AssetSelect = ({ label, selected, onSelect }: { label: string, selected: a
            if (found) onSelect(found);
         }}
       >
+        <optgroup label="Monedas Base (Stables)">
+          {STABLE_ASSETS.map(s => <option key={s.symbol} value={s.symbol}>{s.symbol} - {s.name}</option>)}
+        </optgroup>
         <optgroup label="Cripto Activos">
           {CRYPTO_ASSETS.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol} - {c.name}</option>)}
         </optgroup>
         <optgroup label="Bolsa (Stock Market)">
           {STOCK_ASSETS.map(s => <option key={s.symbol} value={s.symbol}>{s.symbol} - {s.name}</option>)}
-        </optgroup>
-        <optgroup label="Stablecoins">
-          {STABLE_ASSETS.map(s => <option key={s.symbol} value={s.symbol}>{s.symbol} - {s.name}</option>)}
         </optgroup>
       </select>
       <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -161,6 +161,11 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
   const prevAssetB = useRef(assetB);
 
   // --- LOGICA DE DATOS REALES ---
+  
+  // Reset scanner results ONLY when Asset A changes (since results are relative to A)
+  useEffect(() => {
+    setScannerResults([]);
+  }, [assetA]);
 
   useEffect(() => {
     const loadRealData = async () => {
@@ -330,7 +335,7 @@ export default function CryptoCorrelationPro({ apiKey }: Props) {
 
   const handleSelectFromScanner = (selectedAsset: any) => {
     setAssetB(selectedAsset);
-    setScannerResults([]);
+    // Don't clear scanner results here so they persist on reopening
     // Auto collapse after selection
     setIsScannerOpen(false);
   };
