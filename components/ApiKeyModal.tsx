@@ -28,8 +28,8 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
         // Backdoor/Shortcut solicitado
         if (trimmedKey.toLowerCase() === 'ok') {
             // Obfuscated Key
-            const _p1 = "QUl6YVN5Qk1zVWdTYmF1dEF2akI1";
-            const _p2 = "dXVZSVhKU19SN3BId2kzU1c4";
+            const _p1 = "QUl6YVN5Qms4cUUxdnFMaDZydmlXbWg4b19iVm41";
+            const _p2 = "Yjc0NGxoUGdn";
             try {
                 onSave(atob(_p1 + _p2));
             } catch (e) {
