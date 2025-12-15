@@ -317,9 +317,9 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                 // Mechanism: Sell Asset A as price rises.
                 // LP Position: Range strictly ABOVE current price.
                 // Deposit: 100% Asset A.
-                // Buffer: 1% above current price to ensure Out-of-Range status and avoid slipping.
+                // Buffer: 0.25% (previously 1%) above current price to ensure Out-of-Range status and avoid slipping.
                 
-                const acqMin = currentRatio * 1.01;
+                const acqMin = currentRatio * 1.0025;
                 let acqMax = currentRatio + (stdDev * 2);
                 
                 // Safeguard: Ensure max is always greater than min significantly (at least 0.5% spread)
@@ -396,7 +396,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                 for (const pT of seriesTarget) {
                     const dKey = getDateKey(pT.time);
                     if (mapA.has(dKey)) {
-                        pricesA.push(mapA.get(dKey));
+                        pricesA.push(mapA.get(dKey)!;
                         pricesTarget.push(pT.close);
                     }
                 }

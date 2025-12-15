@@ -55,7 +55,7 @@ const StrategyModal: React.FC<Props> = ({ type, onClose }) => {
         bg: "bg-blue-50 border-blue-100",
         icon: TrendingDown,
         desc: "Operación diseñada para adquirir Activo B utilizando tu liquidez actual de Activo A. El rango se sitúa POR ENCIMA del precio actual.",
-        math: "Precio Actual (+1%) ↔ Objetivo Superior (+2σ)",
+        math: "Precio Actual (+0.25%) ↔ Objetivo Superior (+2σ)",
         pros: "Depositas 100% de tu Activo A. Al fijar el rango arriba, estás programando órdenes de venta de A para comprar B conforme el precio sube. Es una forma eficiente de rotar capital o tomar beneficios (Take Profit) hacia una moneda estable.",
         cons: "Si el precio baja, mantienes tu posesión original del Activo A y no se ejecuta la compra de B."
       };
