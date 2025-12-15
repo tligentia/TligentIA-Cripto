@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Plus } from 'lucide-react';
 import { Asset, CurrencyCode, TimeRange } from '../types';
 import DashboardWidget from './DashboardWidget';
 import { TOP_STOCKS } from '../constants';
@@ -95,6 +95,17 @@ const GeneralDashboard: React.FC<Props> = ({ userAssets, currency, rate, onAddCl
                 total={displayAssets.length}
             />
          ))}
+         
+         {/* Botón para Añadir Nuevo Widget */}
+         <button
+            onClick={onAddClick}
+            className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 hover:border-indigo-300 hover:bg-indigo-50/30 flex flex-col items-center justify-center min-h-[140px] cursor-pointer transition-all group gap-3 animate-in fade-in"
+         >
+             <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-gray-200 group-hover:border-indigo-200 group-hover:scale-110 flex items-center justify-center text-gray-400 group-hover:text-indigo-600 transition-all">
+                <Plus size={24} />
+             </div>
+             <span className="text-xs font-bold text-gray-400 group-hover:text-indigo-600 uppercase tracking-wide">Añadir Valor</span>
+         </button>
       </div>
 
     </div>

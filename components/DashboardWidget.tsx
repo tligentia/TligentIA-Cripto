@@ -19,7 +19,8 @@ interface Props {
 }
 
 const DashboardWidget: React.FC<Props> = ({ asset, currency, rate, range, refreshTrigger = 0, index, total, onDelete, onToggleFavorite, onMove }) => {
-  const [data, setData] = useState<{ price: number, change: number, history: any[] } | null>(null);
+  // Added 'diff' to the state interface to store absolute change
+  const [data, setData] = useState<{ price: number, change: number, diff: number, history: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Determine if it is a fixed stock (Top Stock) to prevent deletion
@@ -42,10 +43,12 @@ const DashboardWidget: React.FC<Props> = ({ asset, currency, rate, range, refres
               const startPrice = history[0].close;
               const currentPrice = history[history.length - 1].close;
               const change = ((currentPrice - startPrice) / startPrice) * 100;
+              const diff = currentPrice - startPrice; // Calculate absolute difference
               
               setData({
                 price: currentPrice,
                 change,
+                diff,
                 history: history.map(h => ({ value: h.close }))
               });
             } else {
@@ -85,10 +88,15 @@ const DashboardWidget: React.FC<Props> = ({ asset, currency, rate, range, refres
   const color = isPositive ? '#10b981' : '#ef4444'; // Emerald-500 or Red-500
   const curConf = CURRENCIES[currency];
   
-  // Formato de precio
-  const convertedPrice = data.price * rate;
+  // Formato de precio y diferencia
   const digits = curConf.isCrypto ? 6 : (currency === 'JPY' ? 0 : 2);
+  
+  const convertedPrice = data.price * rate;
   const priceStr = convertedPrice.toLocaleString('es-ES', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+  const convertedDiff = data.diff * rate;
+  const diffStr = Math.abs(convertedDiff).toLocaleString('es-ES', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const sign = isPositive ? '+' : '-';
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
@@ -113,10 +121,13 @@ const DashboardWidget: React.FC<Props> = ({ asset, currency, rate, range, refres
         </div>
       </div>
 
-      {/* PRICE */}
-      <div className="flex justify-between items-end relative z-10 mt-2">
-         <span className="text-xl font-bold text-gray-900 font-mono tracking-tighter">
+      {/* PRICE & ABSOLUTE DIFFERENCE */}
+      <div className="flex flex-col items-start relative z-10 mt-2">
+         <span className="text-xl font-bold text-gray-900 font-mono tracking-tighter leading-none">
             {curConf.symbol} {priceStr}
+         </span>
+         <span className={`text-[10px] font-mono font-bold mt-1 ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+            {sign}{diffStr}
          </span>
       </div>
 

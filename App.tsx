@@ -287,6 +287,7 @@ export default function App() {
 
   const navigateToAnalysis = () => {
       setView('dashboard');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   return (
