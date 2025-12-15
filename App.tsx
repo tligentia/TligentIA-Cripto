@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BarChart3, Clock, Database, Sparkles, RefreshCw, Search, Plus, Loader2, AlertCircle, Coins, Bitcoin, Building2, Activity, Zap, BrainCircuit, Info } from 'lucide-react';
+import { BarChart3, Clock, Database, Sparkles, RefreshCw, Search, Plus, Loader2, AlertCircle, Coins, Bitcoin, Building2, Activity, Zap, BrainCircuit, Info, LayoutGrid } from 'lucide-react';
 import { Asset, CurrencyCode, AssetType } from './types';
 import { COLORS, DEFAULT_ASSETS, TOP_STOCKS, CURRENCIES } from './constants';
 import { resolveAsset, fetchExchangeRates } from './services/market';
@@ -14,6 +14,7 @@ import CookiesModal from './components/CookiesModal';
 import ApiKeyModal from './components/ApiKeyModal';
 import CryptoCorrelationPro from './components/CryptoCorrelationPro';
 import AiSuggestionModal from './components/AiSuggestionModal';
+import GeneralDashboard from './components/GeneralDashboard';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -21,7 +22,9 @@ export default function App() {
   const [showCookies, setShowCookies] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [view, setView] = useState<'dashboard' | 'correlation'>('dashboard');
+  
+  // Changed default view to 'overview'
+  const [view, setView] = useState<'overview' | 'dashboard' | 'correlation'>('overview');
   
   // -- AUTO LOGIN BY IP --
   useEffect(() => {
@@ -268,9 +271,9 @@ export default function App() {
     setShowCookies(true);
   };
 
-  const moveAsset = (index: number, direction: 'left' | 'right') => {
-    const visibleItem = visibleAssets[index];
-    const realIndex = assets.findIndex(a => a.symbol === visibleItem.symbol);
+  // Updated moveAsset to use symbol matching instead of index for robustness across views
+  const moveAsset = (symbol: string, direction: 'left' | 'right') => {
+    const realIndex = assets.findIndex(a => a.symbol === symbol);
     if (realIndex === -1) return; 
 
     const newAssets = [...assets];
@@ -281,6 +284,10 @@ export default function App() {
     }
     setAssets(newAssets);
   };
+
+  const navigateToAnalysis = () => {
+      setView('dashboard');
+  }
 
   return (
     <>
@@ -332,55 +339,62 @@ export default function App() {
 
                  <div className="flex gap-3 items-center">
                     
-                    {/* MARKET SELECTOR (ONLY IN DASHBOARD VIEW) */}
+                    {/* MARKET SELECTOR (CONDITIONAL: ONLY VISIBLE IN ANALYSIS VIEW) */}
                     {view === 'dashboard' && (
-                        <>
-                            <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm">
-                                <button 
-                                    onClick={() => setMarketMode('CRYPTO')}
-                                    className={`px-2 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${marketMode === 'CRYPTO' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
-                                >
-                                    <Bitcoin size={12} /> CRYPTO
-                                </button>
-                                <button 
-                                    onClick={() => setMarketMode('STOCK')}
-                                    className={`px-2 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${marketMode === 'STOCK' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
-                                >
-                                    <Building2 size={12} /> STOCK
-                                </button>
-                            </div>
-                            <div className="h-4 w-px bg-gray-300"></div>
-                        </>
+                        <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                            <button 
+                                onClick={() => setMarketMode('CRYPTO')}
+                                className={`px-3 py-1.5 rounded flex items-center gap-1 transition-all ${marketMode === 'CRYPTO' ? 'bg-white shadow text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                                title="Mercado Cripto"
+                            >
+                                <Bitcoin size={16} />
+                            </button>
+                            <button 
+                                onClick={() => setMarketMode('STOCK')}
+                                className={`px-3 py-1.5 rounded flex items-center gap-1 transition-all ${marketMode === 'STOCK' ? 'bg-white shadow text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                                title="Mercado de Valores (Stock)"
+                            >
+                                <Building2 size={16} />
+                            </button>
+                            <div className="h-4 w-px bg-gray-300 my-auto ml-1"></div>
+                        </div>
                     )}
 
-                    {/* View Switcher: Dashboard vs Correlation */}
+                    {/* View Switcher: Icons Only */}
                     <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm">
                         <button 
-                            onClick={() => setView('dashboard')}
-                            className={`p-1.5 rounded transition-all ${view === 'dashboard' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-                            title="Dashboard Principal"
+                            onClick={() => setView('overview')}
+                            className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'overview' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                            title="Dashboard General"
                         >
-                            <BarChart3 size={14} />
+                            <LayoutGrid size={16} />
+                        </button>
+                        <button 
+                            onClick={() => setView('dashboard')}
+                            className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'dashboard' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                            title="Análisis Detallado"
+                        >
+                            <BarChart3 size={16} />
                         </button>
                         <button 
                             onClick={() => setView('correlation')}
-                            className={`p-1.5 rounded transition-all ${view === 'correlation' ? 'bg-white shadow text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
+                            className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'correlation' ? 'bg-white shadow text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
                             title="Análisis de Correlación"
                         >
-                            <Activity size={14} />
+                            <Activity size={16} />
                         </button>
                     </div>
 
                     <div className="h-4 w-px bg-gray-300"></div>
-                    
-                    {/* CURRENCY SELECTOR */}
+
+                    {/* CURRENCY SELECTOR (Icon Only) */}
                     <div className="relative">
                         <button 
                             onClick={() => setCurrencyOpen(!currencyOpen)}
-                            className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded border transition-colors ${currencyOpen ? 'bg-gray-200 border-gray-300' : 'bg-gray-100 border-gray-200 hover:bg-gray-200'} text-gray-800`}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded border transition-colors ${currencyOpen ? 'bg-gray-200 border-gray-300' : 'bg-gray-100 border-gray-200 hover:bg-gray-200'} text-gray-800`}
+                            title={`Moneda actual: ${currency}`}
                         >
-                            <Coins size={12} className="text-gray-500"/> 
-                            {CURRENCIES[currency].symbol} {currency}
+                            {CURRENCIES[currency].symbol}
                         </button>
                         
                         {currencyOpen && (
@@ -406,8 +420,22 @@ export default function App() {
             </div>
           </div>
         </header>
+
+        {/* GENERAL OVERVIEW DASHBOARD */}
+        <div className={view === 'overview' ? 'block' : 'hidden'}>
+            <GeneralDashboard 
+                userAssets={assets} 
+                currency={currency} 
+                rate={rates[currency]}
+                onAddClick={navigateToAnalysis}
+                onDelete={handleDelete}
+                onToggleFavorite={handleToggleFavorite}
+                onMove={moveAsset}
+                refreshTrigger={refreshTrigger}
+            />
+        </div>
         
-        {/* DASHBOARD VIEW CONTAINER */}
+        {/* DETAILED ANALYSIS VIEW CONTAINER */}
         <div className={view === 'dashboard' ? 'block' : 'hidden'}>
           <div className="mb-8 flex flex-col md:flex-row gap-4 print:hidden">
                 {/* WIDGETS Y FORMULARIO */}

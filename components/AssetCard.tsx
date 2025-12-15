@@ -20,7 +20,7 @@ interface Props {
   rate: number;
   onDelete: (symbol: string) => void;
   onToggleFavorite: (symbol: string) => void;
-  onMove: (index: number, direction: 'left' | 'right') => void;
+  onMove: (symbol: string, direction: 'left' | 'right') => void;
   isFixed?: boolean;
   apiKey: string;
   onRequireKey: () => void;
@@ -293,7 +293,7 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
     try {
         const prompt = `
             Analiza la coherencia de estas 3 etapas CriptoGO para ${asset.symbol} (${asset.type || 'CRYPTO'}): 
-            Diario:${data.daily.stage.name} (RSI: ${data.daily.rsi.toFixed(1)}), 
+            Diario:${data.daily.stage.name} (RSI: ${data.daily.rsi.toFixed(1)}, 
             Semanal:${data.weekly?.stage.name}, 
             Mensual:${data.monthly?.stage.name}.
             Genera UNA sola frase corta y directa (max 15 palabras) resumiendo oportunidad/riesgo.
@@ -415,8 +415,8 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
           <div className="flex gap-2 items-center">
               {!isFixed && (
                   <div className="flex bg-gray-100 rounded-md p-0.5 border border-gray-200 mr-1">
-                    <button onClick={() => onMove(index, 'left')} disabled={index === 0} className="p-1 hover:bg-white hover:shadow-sm rounded disabled:opacity-30 transition-all"><ChevronLeft size={14} className="text-gray-600"/></button>
-                    <button onClick={() => onMove(index, 'right')} disabled={index === total - 1} className="p-1 hover:bg-white hover:shadow-sm rounded disabled:opacity-30 transition-all"><ChevronRight size={14} className="text-gray-600"/></button>
+                    <button onClick={() => onMove(asset.symbol, 'left')} disabled={index === 0} className="p-1 hover:bg-white hover:shadow-sm rounded disabled:opacity-30 transition-all"><ChevronLeft size={14} className="text-gray-600"/></button>
+                    <button onClick={() => onMove(asset.symbol, 'right')} disabled={index === total - 1} className="p-1 hover:bg-white hover:shadow-sm rounded disabled:opacity-30 transition-all"><ChevronRight size={14} className="text-gray-600"/></button>
                   </div>
               )}
               <button onClick={() => fetchData(false)} className="text-gray-400 hover:text-gray-900 p-1"><RefreshCw size={14} /></button>

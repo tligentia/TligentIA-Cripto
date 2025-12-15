@@ -1,5 +1,5 @@
 import { STAGES } from '../constants';
-import { MarketData, TimeframeAnalysis, Asset, CurrencyCode, AssetType } from '../types';
+import { MarketData, TimeframeAnalysis, Asset, CurrencyCode, AssetType, TimeRange } from '../types';
 
 // --- CONFIGURATION ---
 
@@ -46,7 +46,8 @@ const fetchWithProxy = async (targetUrl: string): Promise<any> => {
 
     for (const p of proxies) {
         try {
-            const res = await fetch(p.url(targetUrl));
+            // Proxies might cache, so targetUrl usually has timestamp, but we can also suggest fetch not to cache
+            const res = await fetch(p.url(targetUrl), { cache: 'no-store' });
             if (!res.ok) continue;
             
             const rawJson = await res.json();
@@ -166,7 +167,8 @@ const fetchWithFallback = async (endpoint: string, params: string) => {
     for (const host of BINANCE_HOSTS) {
         try {
             const url = `${host}${endpoint}?${params}`;
-            const res = await fetch(url);
+            // Use no-store to ensure we always get fresh data for charts
+            const res = await fetch(url, { cache: 'no-store' });
             if (res.ok) return await res.json();
             if (res.status === 400 || res.status === 404) {
                // If it's a client error (invalid symbol), don't try other hosts, just throw
@@ -184,6 +186,7 @@ const fetchCryptoData = async (symbol: string): Promise<MarketData> => {
     const symbolPair = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
     
     // Fetch parallel (Requested 60 candles to have enough buffer for RSI and MA calculations)
+    // We implicitly rely on fetchWithFallback no-store policy
     const [dData, wData, mData] = await Promise.all([
         fetchWithFallback('/klines', `symbol=${symbolPair}&interval=1d&limit=60`),
         fetchWithFallback('/klines', `symbol=${symbolPair}&interval=1w&limit=60`),
@@ -272,24 +275,89 @@ export const fetchAssetData = async (symbol: string, type: AssetType = 'CRYPTO')
     }
 };
 
-// --- NEW METHOD: FETCH RAW SERIES FOR CORRELATION ---
+// --- NEW METHOD: FETCH RAW SERIES FOR CORRELATION & DASHBOARD ---
 export interface HistoryPoint {
   time: number;
   close: number;
 }
 
-export const fetchHistoricalSeries = async (symbol: string, type: AssetType, days: number): Promise<HistoryPoint[]> => {
+export const fetchHistoricalSeries = async (symbol: string, type: AssetType, range: TimeRange | number): Promise<HistoryPoint[]> => {
     try {
-        if (type === 'STOCK') {
-            // Map days to Yahoo Range
-            let range = '1mo';
-            if (days <= 7) range = '5d';
-            else if (days <= 31) range = '1mo';
-            else if (days <= 92) range = '3mo';
-            else if (days <= 366) range = '1y';
-            else range = '2y';
+        let yRange = '1mo';
+        let yInterval = '1d';
+        
+        let bInterval = '1d';
+        let bLimit = 30;
 
-            const targetUrl = `${YAHOO_BASE_URL}/${symbol}?interval=1d&range=${range}&events=history&includeAdjustedClose=true&_=${Date.now()}`;
+        // Si es número (legacy fallback para correlación vieja)
+        if (typeof range === 'number') {
+            const days = range;
+            if (days <= 7) { yRange = '5d'; yInterval='15m'; bInterval='1h'; bLimit = days * 24; }
+            else if (days <= 31) { yRange = '1mo'; yInterval='1d'; bInterval='1d'; bLimit = days; }
+            else if (days <= 90) { yRange = '3mo'; yInterval='1d'; bInterval='1d'; bLimit = days; }
+            else { yRange = '1y'; yInterval='1d'; bInterval='1d'; bLimit = Math.min(days, 1000); }
+        } else {
+            // MAPPING TIMERANGES TO API PARAMS
+            switch(range) {
+                case '1H':
+                    yRange = '1d'; // Yahoo min range often 1d, but we can filter or use it. Using 1h range sometimes flaky
+                    yInterval = '2m';
+                    bInterval = '5m';
+                    bLimit = 12; // 12 * 5m = 60m
+                    break;
+                case '1D':
+                    yRange = '1d';
+                    yInterval = '15m'; // Granularity for 1 day
+                    bInterval = '30m';
+                    bLimit = 48; // 24h
+                    break;
+                case '1W':
+                    yRange = '5d';
+                    yInterval = '1h'; // Hourly candles for a week
+                    bInterval = '4h';
+                    bLimit = 42; // 7 days * 6 candles
+                    break;
+                case '1M':
+                    yRange = '1mo';
+                    yInterval = '1d';
+                    bInterval = '1d';
+                    bLimit = 30;
+                    break;
+                case '3M': // Used by correlation internal
+                    yRange = '3mo';
+                    yInterval = '1d';
+                    bInterval = '1d';
+                    bLimit = 90;
+                    break;
+                case 'YTD':
+                    yRange = 'ytd';
+                    yInterval = '1d';
+                    // Binance doesn't support 'ytd', calculate days
+                    const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+                    const diffDays = Math.ceil((Date.now() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+                    bInterval = '1d';
+                    bLimit = diffDays;
+                    break;
+                case '1Y':
+                    yRange = '1y';
+                    yInterval = '1d'; // Or 1wk if too much data
+                    bInterval = '1d';
+                    bLimit = 365;
+                    break;
+                case 'MAX':
+                    yRange = 'max';
+                    yInterval = '1mo';
+                    bInterval = '1M';
+                    bLimit = 60; // 5 years approx
+                    break;
+                default: 
+                    // Fallback 1M
+                    yRange = '1mo'; yInterval = '1d'; bInterval = '1d'; bLimit = 30;
+            }
+        }
+
+        if (type === 'STOCK') {
+            const targetUrl = `${YAHOO_BASE_URL}/${symbol}?interval=${yInterval}&range=${yRange}&events=history&includeAdjustedClose=true&_=${Date.now()}`;
             const json = await fetchWithProxy(targetUrl);
             const result = json?.chart?.result?.[0];
             
@@ -299,8 +367,18 @@ export const fetchHistoricalSeries = async (symbol: string, type: AssetType, day
             const closes = result.indicators.quote[0].close;
             const data: HistoryPoint[] = [];
 
+            // If range is 1H and yahoo returns 1D data, we need to slice locally? 
+            // Usually Yahoo returns what is asked. For 1H using range='1d' returns full day, we might need to slice last hour.
+            // For simplicity we trust Yahoo output or slice if strictly needed, but displaying 'Today' trend for 1H is often acceptable if granular.
+            // Let's implement strict slicing only if range is 1H to show last 60 mins.
+            const now = Date.now() / 1000;
+            const oneHourAgo = now - 3600;
+
             for(let i=0; i<timestamps.length; i++) {
                 if(timestamps[i] && closes[i] !== null) {
+                    // Filter for 1H specifically if we got more data (because yahoo min range is often 1d)
+                    if (range === '1H' && timestamps[i] < oneHourAgo) continue;
+                    
                     data.push({ time: timestamps[i] * 1000, close: closes[i] });
                 }
             }
@@ -308,9 +386,9 @@ export const fetchHistoricalSeries = async (symbol: string, type: AssetType, day
 
         } else {
             // Binance
-            // interval 1d, limit = days
             const symbolPair = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
-            const rawData = await fetchWithFallback('/klines', `symbol=${symbolPair}&interval=1d&limit=${days}`);
+            // Using fetchWithFallback which now has no-store cache
+            const rawData = await fetchWithFallback('/klines', `symbol=${symbolPair}&interval=${bInterval}&limit=${bLimit}`);
             
             return rawData.map((c: any) => ({
                 time: c[0],

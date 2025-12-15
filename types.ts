@@ -4,6 +4,8 @@ export type CurrencyCode = 'USD' | 'EUR' | 'JPY' | 'BTC' | 'ETH';
 
 export type AssetType = 'CRYPTO' | 'STOCK';
 
+export type TimeRange = '1H' | '1D' | '1W' | '1M' | '3M' | 'YTD' | '1Y' | 'MAX';
+
 export interface Asset {
   symbol: string;
   name: string;
