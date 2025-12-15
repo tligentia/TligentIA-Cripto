@@ -396,7 +396,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                 for (const pT of seriesTarget) {
                     const dKey = getDateKey(pT.time);
                     if (mapA.has(dKey)) {
-                        pricesA.push(mapA.get(dKey)!;
+                        pricesA.push(mapA.get(dKey));
                         pricesTarget.push(pT.close);
                     }
                 }
