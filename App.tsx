@@ -332,6 +332,27 @@ export default function App() {
 
                  <div className="flex gap-3 items-center">
                     
+                    {/* MARKET SELECTOR (ONLY IN DASHBOARD VIEW) */}
+                    {view === 'dashboard' && (
+                        <>
+                            <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm">
+                                <button 
+                                    onClick={() => setMarketMode('CRYPTO')}
+                                    className={`px-2 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${marketMode === 'CRYPTO' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
+                                >
+                                    <Bitcoin size={12} /> CRYPTO
+                                </button>
+                                <button 
+                                    onClick={() => setMarketMode('STOCK')}
+                                    className={`px-2 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${marketMode === 'STOCK' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
+                                >
+                                    <Building2 size={12} /> STOCK
+                                </button>
+                            </div>
+                            <div className="h-4 w-px bg-gray-300"></div>
+                        </>
+                    )}
+
                     {/* View Switcher: Dashboard vs Correlation */}
                     <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm">
                         <button 
@@ -347,24 +368,6 @@ export default function App() {
                             title="Análisis de Correlación"
                         >
                             <Activity size={14} />
-                        </button>
-                    </div>
-
-                    <div className="h-4 w-px bg-gray-300"></div>
-
-                    {/* MARKET SELECTOR */}
-                    <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm">
-                        <button 
-                            onClick={() => setMarketMode('CRYPTO')}
-                            className={`px-2 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${marketMode === 'CRYPTO' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
-                        >
-                            <Bitcoin size={12} /> CRYPTO
-                        </button>
-                        <button 
-                            onClick={() => setMarketMode('STOCK')}
-                            className={`px-2 py-1 text-xs font-bold rounded flex items-center gap-1 transition-all ${marketMode === 'STOCK' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
-                        >
-                            <Building2 size={12} /> STOCK
                         </button>
                     </div>
 

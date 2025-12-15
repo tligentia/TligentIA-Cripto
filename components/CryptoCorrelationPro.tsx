@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { Brain, Search, RefreshCw, ArrowRightLeft, Info, BarChart3, Loader2, AlertCircle, Layers, ChevronDown, ChevronUp, Droplets, Target, Calculator, MousePointerClick } from 'lucide-react';
+import { Brain, Search, RefreshCw, ArrowRightLeft, Info, BarChart3, Loader2, AlertCircle, Layers, ChevronDown, ChevronUp, Droplets, Target, Calculator, MousePointerClick, ArrowUpDown, ShieldCheck, Zap, AlertTriangle, Flame } from 'lucide-react';
 import { fetchHistoricalSeries, HistoryPoint } from '../services/market';
-import { CURRENCIES } from '../constants';
+import { CURRENCIES, TOP_STOCKS } from '../constants';
 import { Asset } from '../types';
 import PearsonModal from './PearsonModal';
 import StrategyModal from './StrategyModal';
@@ -144,6 +144,11 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
       const cryptos: any[] = [];
       const stocks: any[] = [];
 
+      // Add Default Top Stocks first to ensure they are available
+      TOP_STOCKS.forEach(s => {
+          stocks.push({ symbol: s.symbol, name: s.name, type: 'stock', category: 'Top Stock' });
+      });
+
       availableAssets.forEach(asset => {
           // Avoid duplicates if stable is already in list (like USDT)
           if (stables.some(s => s.symbol === asset.symbol)) return;
@@ -156,13 +161,16 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
           };
 
           if (asset.type === 'STOCK') {
-              stocks.push(item);
+              // Check if already in stocks (from TOP_STOCKS) to avoid dupes
+              if (!stocks.some(s => s.symbol === item.symbol)) {
+                  stocks.push(item);
+              }
           } else {
               cryptos.push(item);
           }
       });
 
-      // Remove duplicates by symbol just in case
+      // Remove duplicates by symbol just in case (defensive)
       const uniqueCryptos = Array.from(new Map(cryptos.map(item => [item.symbol, item])).values());
       const uniqueStocks = Array.from(new Map(stocks.map(item => [item.symbol, item])).values());
 
@@ -187,6 +195,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
   // AI State
   const [aiAnalysis, setAiAnalysis] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [customQuery, setCustomQuery] = useState(''); // Nuevo estado para la query opcional
   
   // Scanner State
   const [scannerResults, setScannerResults] = useState<any[]>([]);
@@ -195,7 +204,8 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
 
   // LP Metrics State
   const [lpMetrics, setLpMetrics] = useState<any>(null);
-  const [showLpExplanation, setShowLpExplanation] = useState(false);
+  const [showLpExplanation, setShowLpExplanation] = useState(true); // Default open to show details
+  const [invertLp, setInvertLp] = useState(true); // Default to INVERTED (True)
 
   // Modal States
   const [isScannerOpen, setIsScannerOpen] = useState(true);
@@ -216,11 +226,17 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
   useEffect(() => {
     if (!assetA || !assetB) return;
 
+    // Reset interpretation on new pair/timeframe
+    setShowLpExplanation(false);
+
     const loadRealData = async () => {
         setIsLoadingData(true);
         setAiAnalysis('');
+        setCustomQuery(''); // Limpiar la query al cambiar activos
         setCorrelation(null);
         setLpMetrics(null);
+        // Reset inversion on new pair load to Default (Inverted)
+        setInvertLp(true);
 
         try {
             // 1. Fetch raw series for both
@@ -295,6 +311,21 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                 const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
                 const variance = ratios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / ratios.length;
                 const stdDev = Math.sqrt(variance);
+                
+                // ACQUISITION / CONVERSION STRATEGY CALCULATION
+                // Goal: Convert Asset A to Asset B.
+                // Mechanism: Sell Asset A as price rises.
+                // LP Position: Range strictly ABOVE current price.
+                // Deposit: 100% Asset A.
+                // Buffer: 1% above current price to ensure Out-of-Range status and avoid slipping.
+                
+                const acqMin = currentRatio * 1.01;
+                let acqMax = currentRatio + (stdDev * 2);
+                
+                // Safeguard: Ensure max is always greater than min significantly (at least 0.5% spread)
+                if (acqMax <= acqMin * 1.005) {
+                    acqMax = acqMin * 1.05; // Force at least 5% range if volatility is too low
+                }
 
                 setLpMetrics({
                     current: currentRatio,
@@ -307,9 +338,9 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                         min: currentRatio - stdDev, // 1 StdDev Down
                         max: currentRatio + stdDev  // 1 StdDev Up
                     },
-                    accumulation: {
-                        min: minHist * 0.95, // 5% buffer below historical low
-                        max: mean // Up to the average
+                    acquisition: {
+                        min: acqMin, 
+                        max: acqMax 
                     },
                     volatility: (stdDev / mean) * 100 // Coeff of variation %
                 });
@@ -337,7 +368,6 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
     setIsScannerOpen(true);
     
     // Filtramos para no compararse a si mismo
-    // USAMOS unifiedAssets.all para iterar sobre TODOS los activos disponibles
     const targets = unifiedAssets.all.filter(a => a.symbol !== assetA.symbol);
     const results: any[] = [];
     
@@ -366,7 +396,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                 for (const pT of seriesTarget) {
                     const dKey = getDateKey(pT.time);
                     if (mapA.has(dKey)) {
-                        pricesA.push(mapA.get(dKey)!);
+                        pricesA.push(mapA.get(dKey)!;
                         pricesTarget.push(pT.close);
                     }
                 }
@@ -390,9 +420,14 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
 
   const handleSelectFromScanner = (selectedAsset: any) => {
     setAssetB(selectedAsset);
-    // Don't clear scanner results here so they persist on reopening
     // Auto collapse after selection
     setIsScannerOpen(false);
+  };
+
+  const handleSwapAssets = () => {
+      const temp = assetA;
+      setAssetA(assetB);
+      setAssetB(temp);
   };
 
   const analyzeWithGemini = async () => {
@@ -407,7 +442,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
     setIsAnalyzing(true);
     setAiAnalysis('');
 
-    const prompt = `
+    let prompt = `
       Actúa como un analista financiero cuantitativo experto. 
       Analiza la correlación MATEMÁTICA de ${correlation.toFixed(4)} entre ${assetA.name} (${assetA.symbol}) y ${assetB.name} (${assetB.symbol}).
       Periodo analizado: ${timeframe.fullLabel} (${chartData.length} puntos de coincidencia de mercado).
@@ -415,17 +450,32 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
       Contexto:
       - ${assetA.name}: ${assetA.category} (${assetA.type})
       - ${assetB.name}: ${assetB.category} (${assetB.type})
-      
+    `;
+
+    // Si hay una query personalizada, la inyectamos
+    if (customQuery.trim()) {
+        prompt += `
+        \n--------------------------------
+        CONSULTA ESPECÍFICA DEL USUARIO:
+        "${customQuery}"
+        
+        IMPORTANTE: Debes responder a esta pregunta de forma prioritaria en tu análisis.
+        --------------------------------\n
+        `;
+    }
+
+    prompt += `
       Instrucciones de Formato (IMPORTANTE):
       - NO uses sintaxis Markdown (no uses **bold**, ni # headers).
       - Utiliza FUENTES UNICODE para simular negritas y títulos (ej: 𝐇𝐈𝐒𝐓𝐎𝐑𝐈𝐀, 𝐅𝐮𝐧𝐝𝐚𝐦𝐞𝐧𝐭𝐚𝐥𝐞𝐬).
       - Usa iconos visuales elegantes para los puntos (ej: 🔹, 🔸, 📌, 📉, 📉).
       - Sé breve, técnico y directo al grano.
       
-      Contenido:
+      Contenido Requerido:
       1. Interpretación de la fuerza de la correlación (Directa, Inversa, Desacoplada).
       2. ¿Es esta correlación normal para estos activos o una anomalía temporal?
       3. Implicación para un portfolio (Diversificación vs Concentración).
+      ${customQuery.trim() ? '4. RESPUESTA A LA CONSULTA DEL USUARIO.' : ''}
     `;
 
     try {
@@ -466,46 +516,102 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
   const algorithmicAnalysis = useMemo(() => {
     if (!lpMetrics) return null;
     
-    const isHighCorr = (correlation || 0) > 0.75;
-    const isLowCorr = (correlation || 0) < 0.4;
     const volatility = lpMetrics.volatility; // Coeff variation %
+    const symbolA = invertLp ? assetB.symbol : assetA.symbol;
+    const symbolB = invertLp ? assetA.symbol : assetB.symbol;
     
-    let analysisTitle = "";
-    let analysisText = "";
-    let style = "";
+    let analysisTitle = "ANÁLISIS DE ESTRATEGIA ALGORÍTMICA";
+    let style = "bg-slate-50 border-slate-200 text-slate-800";
+    
+    const volatilityDesc = volatility < 5 ? "BAJA (Muy Estable)" : (volatility < 15 ? "MODERADA (Estándar)" : "ALTA (Peligrosa)");
+    
+    // Detailed Structured Text
+    let analysisText = `• 𝐃𝐈𝐀𝐆𝐍𝐎́𝐒𝐓𝐈𝐂𝐎: La volatilidad relativa en este periodo ha sido ${volatilityDesc} (${volatility.toFixed(2)}%).\n\n`;
+    
+    // Conservative
+    analysisText += `𝟏. 𝐑𝐀𝐍𝐆𝐎 𝐂𝐎𝐍𝐒𝐄𝐑𝐕𝐀𝐃𝐎𝐑 (Wide)\n`;
+    analysisText += `• 𝐎𝐛𝐣𝐞𝐭𝐢𝐯𝐨: Cobertura total del movimiento histórico.\n`;
+    analysisText += `• 𝐓𝐚́𝐜𝐭𝐢𝐜𝐚: Provee liquidez en todo el espectro detectado +5% de margen. Ideal para posiciones pasivas "set & forget". Minimiza el riesgo de salida del rango (Impermanent Loss bajo), pero diluye el capital reduciendo el APR.\n\n`;
+    
+    // Aggressive
+    analysisText += `𝟐. 𝐑𝐀𝐍𝐆𝐎 𝐀𝐆𝐑𝐄𝐒𝐈𝐕𝐎 (Narrow)\n`;
+    analysisText += `• 𝐎𝐛𝐣𝐞𝐭𝐢𝐯𝐨: Maximización de rendimiento inmediato.\n`;
+    analysisText += `• 𝐓𝐚́𝐜𝐭𝐢𝐜𝐚: Concentra el capital solo donde está el precio ahora (±1 Desviación Estándar). ${volatility < 5 ? 'Al ser baja la volatilidad, es la opción recomendada.' : 'Con alta volatilidad, es arriesgado: el precio se saldrá rápido.'}\n\n`;
+    
+    // Acquisition (Conversion A -> B)
+    analysisText += `𝟑. 𝐑𝐀𝐍𝐆𝐎 𝐂𝐀𝐏𝐓𝐀𝐂𝐈Ó𝐍 (Operación: Comprar ${symbolB} con ${symbolA})\n`;
+    analysisText += `• 𝐎𝐛𝐣𝐞𝐭𝐢𝐯𝐨: Transformar tu liquidez del Activo A (Base) en Activo B (Objetivo).\n`;
+    analysisText += `• 𝐓𝐚́𝐜𝐭𝐢𝐜𝐚: Aportas el 100% de la liquidez en Activo A. El rango se sitúa SUPERIOR al precio actual. Mecánica: A medida que el precio sube y cruza el rango, el protocolo vende inteligentemente tu A para adquirir B. Si el precio completa el rango, tu cartera habrá rotado completamente a ${symbolB}.`;
 
-    if (isLowCorr) {
-        analysisTitle = "⚠️ ALERTA: Desacople de Precio";
-        analysisText = `La correlación es demasiado baja (${correlation?.toFixed(2)}). Los activos se mueven en direcciones opuestas frecuentemente. PROVEER LIQUIDEZ AQUÍ ES PELIGROSO debido al alto riesgo de Impermanent Loss.`;
-        style = "bg-red-50 border-red-200 text-red-800";
-    } else if (volatility > 10) { // >10% variation relative to mean
-        analysisTitle = "⚡ PRECAUCIÓN: Alta Volatilidad";
-        analysisText = `Aunque hay correlación, la volatilidad relativa es alta. El precio oscila con fuerza. El "Rango Agresivo" se romperá con facilidad. Se recomienda encarecidamente usar el Rango Conservador o esperar a que se estabilice.`;
-        style = "bg-orange-50 border-orange-200 text-orange-800";
-    } else if (isHighCorr) {
-        analysisTitle = "✅ ESCENARIO IDEAL: Zona Segura";
-        analysisText = `Sincronización perfecta. Ambos activos "respiran" juntos con baja volatilidad relativa. El "Rango Agresivo" tiene altas probabilidades de mantenerse efectivo, maximizando la captura de comisiones (Fees).`;
-        style = "bg-emerald-50 border-emerald-200 text-emerald-800";
-    } else {
-        analysisTitle = "⚖️ ESCENARIO NEUTRO";
-        analysisText = `Condiciones de mercado estándar. Si usas el Rango Agresivo, vigila el precio diariamente. El Rango Conservador es una apuesta segura para dejar correr la posición a medio plazo.`;
-        style = "bg-blue-50 border-blue-200 text-blue-800";
-    }
-    
     return { title: analysisTitle, text: analysisText, style };
-  }, [lpMetrics, correlation]);
+  }, [lpMetrics, invertLp, assetA.symbol, assetB.symbol]);
   
-  // Helper to format Fiat Price
-  const formatFiat = (ratioPrice: number) => {
-      if (!lpMetrics || !lpMetrics.priceB) return null;
-      // Formula: Ratio (Units of B for 1 A) * Price of B (USD/USDT) * Rate (Selected Currency / USD)
-      const val = ratioPrice * lpMetrics.priceB * rate;
-      const symbol = CURRENCIES[currency as keyof typeof CURRENCIES]?.symbol || currency;
-      
-      // Smart digits
-      const digits = val < 1 ? 4 : (val < 100 ? 2 : 0);
-      
-      return `≈ ${val.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${symbol}`;
+  // Helper to get displayed numbers based on inversion
+  const getLpValues = () => {
+      if (!lpMetrics) return null;
+      if (!invertLp) {
+          // Normal: 1 Unit A = X Unit B
+          return {
+              label: `Precio Actual (1 ${assetA.symbol})`,
+              symbol: assetB.symbol,
+              current: lpMetrics.current,
+              cons: lpMetrics.conservative,
+              agg: lpMetrics.aggressive,
+              acq: lpMetrics.acquisition
+          };
+      } else {
+          // Inverted: 1 Unit B = X Unit A
+          // When inverting, Min becomes 1/Max and Max becomes 1/Min
+          return {
+              label: `Precio Actual (1 ${assetB.symbol})`,
+              symbol: assetA.symbol,
+              current: 1 / lpMetrics.current,
+              cons: { min: 1 / lpMetrics.conservative.max, max: 1 / lpMetrics.conservative.min },
+              agg: { min: 1 / lpMetrics.aggressive.max, max: 1 / lpMetrics.aggressive.min },
+              acq: { min: 1 / lpMetrics.acquisition.max, max: 1 / lpMetrics.acquisition.min }
+          };
+      }
+  };
+
+  const lpVals = getLpValues();
+
+  // Helper Risk Calculation
+  const getRiskBadge = (type: 'conservative' | 'aggressive' | 'accumulation') => {
+        if(!lpMetrics) return null;
+        
+        const vol = lpMetrics.volatility; // Coeff variation
+        // Logic: Volatility is the main risk factor for IL
+        // Correlation also matters but simplified: High Vol = High IL Risk
+        
+        let baseScore = vol * 2.5; 
+        if (correlation && correlation < 0.5) baseScore += 15; // Divergence Risk
+        
+        let finalScore = baseScore;
+        // Strategy Modifiers
+        if (type === 'conservative') finalScore *= 0.5; // Wider range = Less risk of being out of range
+        if (type === 'aggressive') finalScore *= 1.4; // Narrow range = High risk
+        if (type === 'accumulation') finalScore *= 0.9; // Directional risk
+        
+        if (finalScore < 15) return { label: 'RIESGO BAJO', color: 'text-emerald-700 bg-emerald-100 border-emerald-200', icon: ShieldCheck };
+        if (finalScore < 40) return { label: 'RIESGO MEDIO', color: 'text-amber-700 bg-amber-100 border-amber-200', icon: AlertTriangle };
+        if (finalScore < 70) return { label: 'RIESGO ALTO', color: 'text-orange-700 bg-orange-100 border-orange-200', icon: Zap };
+        return { label: 'RIESGO EXTREMO', color: 'text-red-700 bg-red-100 border-red-200', icon: Flame };
+  };
+
+  // Helper to format prices
+  const formatCrypto = (val: number) => {
+      // Use more decimals for very small numbers (like BTC pairs or memecoins)
+      if (val < 0.0001) {
+          return val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 9 });
+      }
+      return val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 6 });
+  };
+
+  const formatFiat = (val: number) => {
+      if(!lpMetrics || !lpMetrics.priceB) return "";
+      const estimatedValue = val * lpMetrics.priceB * rate;
+      const curSymbol = CURRENCIES[currency as keyof typeof CURRENCIES]?.symbol || "$";
+      return `≈ ${estimatedValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curSymbol}`;
   };
 
 
@@ -525,7 +631,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                     <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">
                         CRYPTO<span className="text-red-600">CORRELATION</span>
                     </h1>
-                    <p className="text-[10px] text-gray-400 font-medium">Real-Data Correlation Engine</p>
+                    <p className="text-xs text-gray-400 font-medium">Real-Data Correlation Engine</p>
                 </div>
             </div>
 
@@ -542,7 +648,11 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                     />
                 </div>
                 
-                <div className="pb-2 text-gray-300">
+                <div 
+                    className="pb-2 text-gray-300 cursor-pointer hover:text-indigo-600 hover:scale-110 transition-all"
+                    onClick={handleSwapAssets}
+                    title="Intercambiar Activos"
+                >
                     <ArrowRightLeft size={16} />
                 </div>
 
@@ -579,12 +689,179 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
         </div>
       </div>
 
+      {/* NEW: LIQUIDITY POOL RANGES SECTION (Full Width for Horizontal Layout) */}
+      {lpVals && (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-shrink-0">
+        <div className="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+            <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <Layers size={14} className="text-indigo-600" />
+                Estrategia de Liquidez (LP / Grid)
+            </h2>
+            <button 
+                onClick={() => setInvertLp(!invertLp)}
+                className={`text-[10px] flex items-center gap-1 font-bold px-2 py-1 rounded transition-colors ${invertLp ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                title="Invertir par (1/x)"
+            >
+                <ArrowUpDown size={10} /> {invertLp ? 'INVERTIDO' : 'NORMAL'}
+            </button>
+        </div>
+        
+        {/* Current Price Highlight */}
+        <div className="px-4 py-2 bg-indigo-50/30 border-b border-indigo-50 flex justify-between items-center">
+            <span className="text-[10px] font-bold text-gray-500">{lpVals.label}:</span>
+            <div className="text-right">
+                <span className="font-mono font-bold text-sm text-indigo-900 block leading-none">
+                        {formatCrypto(lpVals.current)} {lpVals.symbol}
+                </span>
+                {!invertLp && <span className="text-[10px] text-indigo-500 font-bold">{formatFiat(lpVals.current)}</span>}
+            </div>
+        </div>
+
+        <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Estrategia Conservadora */}
+            <div 
+                onClick={() => setSelectedStrategy('conservative')}
+                className="bg-emerald-50 rounded-lg border border-emerald-200 p-3 relative overflow-hidden cursor-pointer hover:shadow-md transition-all group"
+            >
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] uppercase font-bold text-emerald-800 tracking-wide">RANGO CONSERVADOR (WIDE)</span>
+                        {(() => {
+                            const risk = getRiskBadge('conservative');
+                            if(!risk) return null;
+                            const RiskIcon = risk.icon;
+                            return (
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 ${risk.color}`}>
+                                    <RiskIcon size={8} /> {risk.label}
+                                </span>
+                            );
+                        })()}
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <div>
+                        <div className="text-[9px] font-bold text-emerald-600 uppercase mb-0.5">MIN PRICE</div>
+                        <div className="font-mono font-bold text-emerald-900 text-lg leading-none">{formatCrypto(lpVals.cons.min)}</div>
+                        {!invertLp && <div className="text-[10px] text-emerald-700 font-medium mt-0.5">{formatFiat(lpVals.cons.min)}</div>}
+                        </div>
+                        
+                        {/* Visual Line */}
+                        <div className="h-px bg-emerald-300 w-12 mx-2"></div>
+
+                        <div className="text-right">
+                        <div className="text-[9px] font-bold text-emerald-600 uppercase mb-0.5">MAX PRICE</div>
+                        <div className="font-mono font-bold text-emerald-900 text-lg leading-none">{formatCrypto(lpVals.cons.max)}</div>
+                        {!invertLp && <div className="text-[10px] text-emerald-700 font-medium mt-0.5">{formatFiat(lpVals.cons.max)}</div>}
+                        </div>
+                    </div>
+            </div>
+
+            {/* Estrategia Agresiva */}
+            <div 
+                onClick={() => setSelectedStrategy('aggressive')}
+                className="bg-amber-50 rounded-lg border border-amber-200 p-3 relative overflow-hidden cursor-pointer hover:shadow-md transition-all group"
+            >
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] uppercase font-bold text-amber-800 tracking-wide">RANGO AGRESIVO (NARROW)</span>
+                        {(() => {
+                            const risk = getRiskBadge('aggressive');
+                            if(!risk) return null;
+                            const RiskIcon = risk.icon;
+                            return (
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 ${risk.color}`}>
+                                    <RiskIcon size={8} /> {risk.label}
+                                </span>
+                            );
+                        })()}
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <div>
+                        <div className="text-[9px] font-bold text-amber-600 uppercase mb-0.5">MIN PRICE</div>
+                        <div className="font-mono font-bold text-amber-900 text-lg leading-none">{formatCrypto(lpVals.agg.min)}</div>
+                        {!invertLp && <div className="text-[10px] text-amber-700 font-medium mt-0.5">{formatFiat(lpVals.agg.min)}</div>}
+                        </div>
+                        
+                        {/* Visual Line */}
+                        <div className="h-px bg-amber-300 w-12 mx-2"></div>
+
+                        <div className="text-right">
+                        <div className="text-[9px] font-bold text-amber-600 uppercase mb-0.5">MAX PRICE</div>
+                        <div className="font-mono font-bold text-amber-900 text-lg leading-none">{formatCrypto(lpVals.agg.max)}</div>
+                        {!invertLp && <div className="text-[10px] text-amber-700 font-medium mt-0.5">{formatFiat(lpVals.agg.max)}</div>}
+                        </div>
+                    </div>
+                    <MousePointerClick size={12} className="absolute top-2 right-2 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+
+            {/* Estrategia Captación */}
+            <div 
+                onClick={() => setSelectedStrategy('accumulation')}
+                className="bg-blue-50 rounded-lg border border-blue-200 p-3 relative overflow-hidden cursor-pointer hover:shadow-md transition-all group"
+            >
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] uppercase font-bold text-blue-800 tracking-wide">RANGO CAPTACIÓN</span>
+                        {(() => {
+                            const risk = getRiskBadge('accumulation');
+                            if(!risk) return null;
+                            const RiskIcon = risk.icon;
+                            return (
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 ${risk.color}`}>
+                                    <RiskIcon size={8} /> {risk.label}
+                                </span>
+                            );
+                        })()}
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <div>
+                        <div className="text-[9px] font-bold text-blue-600 uppercase mb-0.5">MIN PRICE</div>
+                        <div className="font-mono font-bold text-blue-900 text-lg leading-none">{formatCrypto(lpVals.acq.min)}</div>
+                        {!invertLp && <div className="text-[10px] text-blue-700 font-medium mt-0.5">{formatFiat(lpVals.acq.min)}</div>}
+                        </div>
+                        
+                        {/* Visual Line */}
+                        <div className="h-px bg-blue-300 w-12 mx-2"></div>
+
+                        <div className="text-right">
+                        <div className="text-[9px] font-bold text-blue-600 uppercase mb-0.5">MAX PRICE</div>
+                        <div className="font-mono font-bold text-blue-900 text-lg leading-none">{formatCrypto(lpVals.acq.max)}</div>
+                        {!invertLp && <div className="text-[10px] text-blue-700 font-medium mt-0.5">{formatFiat(lpVals.acq.max)}</div>}
+                        </div>
+                    </div>
+            </div>
+        </div>
+
+        {/* Collapsible Explanation */}
+        <div className="border-t border-gray-100">
+            <button 
+                onClick={() => setShowLpExplanation(!showLpExplanation)}
+                className="w-full text-left px-3 py-2 bg-gray-50/50 hover:bg-gray-50 flex justify-between items-center transition-colors group"
+            >
+                <span className="text-[10px] font-bold text-indigo-600 flex items-center gap-1 group-hover:text-indigo-800">
+                    <Droplets size={10}/> Interpretación Algorítmica de Rangos
+                </span>
+                {showLpExplanation ? <ChevronUp size={12} className="text-gray-400"/> : <ChevronDown size={12} className="text-gray-400"/>}
+            </button>
+            
+            {showLpExplanation && algorithmicAnalysis && (
+                <div className="p-3 bg-gray-50 text-[10px] text-gray-600 space-y-2 border-t border-gray-100 animate-in slide-in-from-top-1">
+                        <div className={`p-3 rounded border ${algorithmicAnalysis.style} whitespace-pre-wrap`}>
+                            <div className="font-bold flex items-center gap-1 mb-2 uppercase tracking-wide border-b border-black/5 pb-1">
+                                <Target size={12} /> {algorithmicAnalysis.title}
+                            </div>
+                            <p className="leading-relaxed opacity-90">{algorithmicAnalysis.text}</p>
+                        </div>
+                </div>
+            )}
+        </div>
+      </div>
+      )}
+
       {/* 2. Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1">
         
         {/* Left Column: Scanner (3 cols) */}
         <div className="lg:col-span-3 flex flex-col gap-4">
-           <div className={`bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col transition-all duration-300 ${isScannerOpen ? 'h-full max-h-[500px] lg:max-h-none' : 'h-auto'}`}>
+            
+            {/* REAL SCANNER */}
+            <div className={`bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col transition-all duration-300 ${isScannerOpen ? 'h-full max-h-[500px] lg:max-h-none' : 'h-auto'}`}>
                 <div 
                     onClick={() => setIsScannerOpen(!isScannerOpen)}
                     className="p-3 border-b border-gray-100 bg-gray-50/50 flex flex-col gap-2 cursor-pointer hover:bg-gray-100 transition-colors"
@@ -592,7 +869,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                     <div className="flex justify-between items-center">
                         <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                             <Search size={14} className="text-red-600" />
-                            Escáner Real
+                            Escáner en tiempo real
                         </h2>
                         <div className="flex items-center gap-2">
                             <button 
@@ -601,7 +878,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                                 className="text-[10px] bg-white border border-gray-200 text-red-700 font-bold px-2 py-1 rounded hover:bg-red-50 disabled:opacity-50 transition-colors uppercase tracking-wide flex items-center gap-1 shadow-sm"
                             >
                                 {isScanning && <Loader2 size={10} className="animate-spin" />}
-                                {isScanning ? 'ESCAN...' : 'EJECUTAR'}
+                                {isScanning ? 'ESCAN...' : 'ESCANEAR'}
                             </button>
                             {isScannerOpen ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
                         </div>
@@ -732,163 +1009,6 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
              </div>
           </div>
           
-          {/* LIQUIDITY POOL RANGES SECTION */}
-          {lpMetrics && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                    <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                        <Layers size={14} className="text-indigo-600" />
-                        Estrategia de Liquidez (LP / Grid)
-                    </h2>
-                    <div className="flex flex-col items-end gap-0.5">
-                        <div className="flex items-center gap-2 text-xs">
-                            <span className="text-gray-500 font-medium">Precio Actual (1 {assetA.symbol}):</span>
-                            <span className="font-mono font-bold text-gray-900 bg-white border border-gray-200 px-2 py-0.5 rounded">
-                                {lpMetrics.current.toLocaleString(undefined, { maximumFractionDigits: 6 })} {assetB.symbol}
-                            </span>
-                        </div>
-                        <span className="text-[10px] text-indigo-600 font-black tracking-wide">{formatFiat(lpMetrics.current)}</span>
-                    </div>
-                </div>
-
-                <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Estrategia Conservadora */}
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                            <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider">Rango Conservador (Wide)</span>
-                            <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 rounded">Baja Volatilidad</span>
-                        </div>
-                        <div 
-                            onClick={() => setSelectedStrategy('conservative')}
-                            className="bg-emerald-50 rounded-lg border border-emerald-100 p-3 relative overflow-hidden cursor-pointer hover:shadow-md hover:border-emerald-300 transition-all group"
-                        >
-                             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MousePointerClick size={12} className="text-emerald-400" />
-                             </div>
-                             <div className="flex justify-between items-center relative z-10">
-                                <div className="text-center">
-                                    <p className="text-[9px] text-emerald-600 font-semibold mb-0.5">MIN PRICE</p>
-                                    <p className="font-mono font-bold text-emerald-900">{lpMetrics.conservative.min.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
-                                    <p className="text-[9px] text-emerald-700 font-bold">{formatFiat(lpMetrics.conservative.min)}</p>
-                                </div>
-                                <div className="h-px bg-emerald-300 flex-1 mx-4"></div>
-                                <div className="text-center">
-                                    <p className="text-[9px] text-emerald-600 font-semibold mb-0.5">MAX PRICE</p>
-                                    <p className="font-mono font-bold text-emerald-900">{lpMetrics.conservative.max.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
-                                    <p className="text-[9px] text-emerald-700 font-bold">{formatFiat(lpMetrics.conservative.max)}</p>
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-
-                    {/* Estrategia Agresiva */}
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                            <span className="text-[10px] uppercase font-bold text-amber-700 tracking-wider">Rango Agresivo (Narrow)</span>
-                            <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 rounded">Alta Rentabilidad</span>
-                        </div>
-                        <div 
-                            onClick={() => setSelectedStrategy('aggressive')}
-                            className="bg-amber-50 rounded-lg border border-amber-100 p-3 relative overflow-hidden cursor-pointer hover:shadow-md hover:border-amber-300 transition-all group"
-                        >
-                             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MousePointerClick size={12} className="text-amber-400" />
-                             </div>
-                             <div className="flex justify-between items-center relative z-10">
-                                <div className="text-center">
-                                    <p className="text-[9px] text-amber-600 font-semibold mb-0.5">MIN PRICE</p>
-                                    <p className="font-mono font-bold text-amber-900">{lpMetrics.aggressive.min.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
-                                    <p className="text-[9px] text-amber-700 font-bold">{formatFiat(lpMetrics.aggressive.min)}</p>
-                                </div>
-                                <div className="h-px bg-amber-300 flex-1 mx-4"></div>
-                                <div className="text-center">
-                                    <p className="text-[9px] text-amber-600 font-semibold mb-0.5">MAX PRICE</p>
-                                    <p className="font-mono font-bold text-amber-900">{lpMetrics.aggressive.max.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
-                                    <p className="text-[9px] text-amber-700 font-bold">{formatFiat(lpMetrics.aggressive.max)}</p>
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-
-                    {/* Estrategia Acumulación (Coste Mínimo) */}
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                            <span className="text-[10px] uppercase font-bold text-blue-700 tracking-wider">Rango Compra Coste Mínimo</span>
-                            <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 rounded">Acumulación</span>
-                        </div>
-                        <div 
-                            onClick={() => setSelectedStrategy('accumulation')}
-                            className="bg-blue-50 rounded-lg border border-blue-100 p-3 relative overflow-hidden cursor-pointer hover:shadow-md hover:border-blue-300 transition-all group"
-                        >
-                             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MousePointerClick size={12} className="text-blue-400" />
-                             </div>
-                             <div className="flex justify-between items-center relative z-10">
-                                <div className="text-center">
-                                    <p className="text-[9px] text-blue-600 font-semibold mb-0.5">MIN PRICE</p>
-                                    <p className="font-mono font-bold text-blue-900">{lpMetrics.accumulation.min.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
-                                    <p className="text-[9px] text-blue-700 font-bold">{formatFiat(lpMetrics.accumulation.min)}</p>
-                                </div>
-                                <div className="h-px bg-blue-300 flex-1 mx-4"></div>
-                                <div className="text-center">
-                                    <p className="text-[9px] text-blue-600 font-semibold mb-0.5">MAX PRICE</p>
-                                    <p className="font-mono font-bold text-blue-900">{lpMetrics.accumulation.max.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
-                                    <p className="text-[9px] text-blue-700 font-bold">{formatFiat(lpMetrics.accumulation.max)}</p>
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Collapsible Explanation with Dynamic Analysis */}
-                <div className="border-t border-gray-100">
-                    <button 
-                        onClick={() => setShowLpExplanation(!showLpExplanation)}
-                        className="w-full text-left px-4 py-2 bg-gray-50/50 hover:bg-gray-50 flex justify-between items-center transition-colors group"
-                    >
-                        <span className="text-xs font-bold text-indigo-600 flex items-center gap-1 group-hover:text-indigo-800">
-                            <Droplets size={12}/> ¿Cómo interpretar estos rangos?
-                        </span>
-                        {showLpExplanation ? <ChevronUp size={14} className="text-gray-400"/> : <ChevronDown size={14} className="text-gray-400"/>}
-                    </button>
-                    
-                    {showLpExplanation && algorithmicAnalysis && (
-                        <div className="p-4 bg-gray-50 text-xs text-gray-600 space-y-3 border-t border-gray-100 animate-in slide-in-from-top-1">
-                             
-                             <div className={`p-3 rounded-lg border ${algorithmicAnalysis.style} mb-3`}>
-                                 <div className="font-bold flex items-center gap-1.5 mb-1 text-[11px] uppercase tracking-wide">
-                                     <Target size={12} /> {algorithmicAnalysis.title}
-                                 </div>
-                                 <p className="leading-relaxed opacity-90">{algorithmicAnalysis.text}</p>
-                             </div>
-
-                             <div className="h-px bg-gray-200 w-full my-2"></div>
-
-                             {/* Static Explanation */}
-                             <p>
-                                <strong>Correlación y Liquidez:</strong> En Pools de Liquidez (como Uniswap V3), el objetivo es mantener el precio dentro de un rango. 
-                                Una correlación alta (&gt;0.7) indica que ambos activos se mueven juntos, reduciendo el riesgo de que el precio se salga del rango (Impermanent Loss).
-                            </p>
-                            <ul className="list-disc pl-4 space-y-1">
-                                <li>
-                                    <span className="text-emerald-700 font-bold">Rango Conservador:</span> Basado en los máximos y mínimos históricos del periodo seleccionado (+5% buffer). Ideal para estrategias pasivas donde no quieres rebalancear constantemente.
-                                </li>
-                                <li>
-                                    <span className="text-amber-700 font-bold">Rango Agresivo:</span> Basado en la volatilidad actual (Precio Actual ± 1 Desviación Estándar). Genera muchas más comisiones (Fees) al concentrar la liquidez, pero tiene un riesgo alto de que el precio se salga del rango rápidamente.
-                                </li>
-                                <li>
-                                    <span className="text-blue-700 font-bold">Rango Compra Coste Mínimo:</span> Estrategia de acumulación (DCA Grid). Cubre desde el mínimo histórico hasta la media. Ideal para entrar en el mercado comprando progresivamente más barato sin riesgo de comprar en picos.
-                                </li>
-                            </ul>
-                            <p className="italic opacity-70 mt-1">
-                                * Nota: Estos cálculos son teóricos basados en datos pasados. Provee liquidez bajo tu propio riesgo.
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </div>
-          )}
-
           {/* AI Analysis Section (Compact & Collapsible) */}
           <div className={`bg-white rounded-lg shadow-sm border border-gray-200 flex-1 relative overflow-hidden flex flex-col transition-all duration-300 ${isAiSectionOpen ? 'h-auto min-h-[150px]' : 'h-auto'}`}>
             <div className="absolute top-0 left-0 w-1 h-full bg-black"></div>
@@ -897,10 +1017,32 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                 onClick={() => setIsAiSectionOpen(!isAiSectionOpen)}
                 className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
             >
-              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                <Brain size={16} className="text-gray-900" />
-                Perspectiva IA
-              </h2>
+              {/* HEADER WITH TITLE AND INPUT */}
+              <div className="flex items-center gap-4 flex-1">
+                <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2 whitespace-nowrap">
+                    <Brain size={16} className="text-gray-900" />
+                    Perspectiva IA
+                </h2>
+                
+                {/* Optional Custom Query Input */}
+                {isAiSectionOpen && !isAnalyzing && !aiAnalysis && (
+                    <input 
+                        type="text" 
+                        value={customQuery}
+                        onChange={(e) => setCustomQuery(e.target.value)}
+                        onClick={(e) => e.stopPropagation()} // Prevent collapse on click
+                        onKeyDown={(e) => { 
+                            if(e.key === 'Enter') {
+                                e.stopPropagation();
+                                analyzeWithGemini();
+                            }
+                        }}
+                        placeholder="Añadir consulta específica..."
+                        className="flex-1 max-w-xs text-[11px] border border-gray-200 rounded px-2 py-1 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none placeholder:text-gray-400"
+                    />
+                )}
+              </div>
+
               <div className="flex items-center gap-2">
                   { !aiAnalysis && !isAnalyzing && isAiSectionOpen && (
                      <button 

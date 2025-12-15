@@ -49,15 +49,15 @@ const StrategyModal: React.FC<Props> = ({ type, onClose }) => {
       break;
     case 'accumulation':
       config = {
-        title: "Rango Compra Coste Mínimo",
-        subtitle: "Estrategia DCA / Grid de Entrada",
+        title: "Rango Captación (Compra de B con A)",
+        subtitle: "Estrategia de Conversión de Activo",
         color: "text-blue-700",
         bg: "bg-blue-50 border-blue-100",
         icon: TrendingDown,
-        desc: "Diseñado para entrar en el mercado progresivamente. Solo provee liquidez en la mitad inferior del gráfico histórico.",
-        math: "Mínimo Histórico ↔ Media Histórica (MA)",
-        pros: "Actúa como órdenes de compra escalonadas (Limit Orders). Si el precio baja, acumulas más activo barato. Si sube, vendes con beneficio hasta la media.",
-        cons: "Si el precio entra en euforia (Bull Run) y supera la media, te quedarás fuera (vendido) rápidamente."
+        desc: "Operación diseñada para adquirir Activo B utilizando tu liquidez actual de Activo A. El rango se sitúa POR ENCIMA del precio actual.",
+        math: "Precio Actual (+1%) ↔ Objetivo Superior (+2σ)",
+        pros: "Depositas 100% de tu Activo A. Al fijar el rango arriba, estás programando órdenes de venta de A para comprar B conforme el precio sube. Es una forma eficiente de rotar capital o tomar beneficios (Take Profit) hacia una moneda estable.",
+        cons: "Si el precio baja, mantienes tu posesión original del Activo A y no se ejecuta la compra de B."
       };
       break;
   }
