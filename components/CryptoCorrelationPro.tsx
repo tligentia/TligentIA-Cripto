@@ -1101,6 +1101,18 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
       {selectedStrategy && (
           <StrategyModal 
             type={selectedStrategy} 
+            assetA={invertLp ? assetB.symbol : assetA.symbol}
+            assetB={invertLp ? assetA.symbol : assetB.symbol}
+            minPrice={
+                selectedStrategy === 'conservative' ? lpVals?.cons.min :
+                selectedStrategy === 'aggressive' ? lpVals?.agg.min :
+                lpVals?.acq.min
+            }
+            maxPrice={
+                selectedStrategy === 'conservative' ? lpVals?.cons.max :
+                selectedStrategy === 'aggressive' ? lpVals?.agg.max :
+                lpVals?.acq.max
+            }
             onClose={() => setSelectedStrategy(null)} 
           />
       )}
