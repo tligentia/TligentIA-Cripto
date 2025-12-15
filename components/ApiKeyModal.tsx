@@ -25,13 +25,25 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
     const trimmedKey = key.trim();
     
     if (trimmedKey) {
+        const lowerKey = trimmedKey.toLowerCase();
+        
         // Backdoor/Shortcut solicitado
-        if (trimmedKey.toLowerCase() === 'ok') {
-            // Obfuscated Key
+        if (lowerKey === 'ok') {
+            // Obfuscated Key (Dev Main)
             const _p1 = "QUl6YVN5Qms4cUUxdnFMaDZydmlXbWg4b19iVm41";
             const _p2 = "Yjc0NGxoUGdn";
             try {
                 onSave(atob(_p1 + _p2));
+            } catch (e) {
+                console.error("Error decoding key");
+            }
+        } else if (lowerKey === 'cv') {
+            // Obfuscated Key (Co-Dev)
+            // AIzaSyCr-jWT3P6Emwj9_15Dk_T2xcNUZofol1I
+            const _c1 = "QUl6YVN5Q3ItaldUM1A2RW13";
+            const _c2 = "ajlfMTVEa19UMnhjTlhab2ZvbDFJ";
+            try {
+                onSave(atob(_c1 + _c2));
             } catch (e) {
                 console.error("Error decoding key");
             }

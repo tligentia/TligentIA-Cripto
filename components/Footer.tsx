@@ -17,7 +17,7 @@ const Footer: React.FC<FooterProps> = ({ assetCount, userIp, onManageCookies, on
                 
                 {/* Izquierda: Info Técnica */}
                 <div className="flex items-center gap-3">
-                    <span className="font-bold text-red-700">v25.12N</span>
+                    <span className="font-bold text-red-700">v25.12O</span>
                     {userIp && <span className="font-mono text-gray-400 hidden sm:inline">{userIp}</span>}
                 </div>
 
