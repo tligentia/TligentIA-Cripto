@@ -16,8 +16,18 @@ interface Props {
 }
 
 const GeneralDashboard: React.FC<Props> = ({ userAssets, currency, rate, onAddClick, onDelete, onToggleFavorite, onMove, refreshTrigger = 0 }) => {
-  const [selectedRange, setSelectedRange] = useState<TimeRange>('1W');
+  // Initialize state from localStorage or default to '1W'
+  const [selectedRange, setSelectedRange] = useState<TimeRange>(() => {
+      const saved = localStorage.getItem('criptogo_dashboard_range');
+      return (saved as TimeRange) || '1W';
+  });
+  
   const [autoRefreshTrigger, setAutoRefreshTrigger] = useState(0);
+
+  // Persist selection whenever it changes
+  useEffect(() => {
+      localStorage.setItem('criptogo_dashboard_range', selectedRange);
+  }, [selectedRange]);
 
   // Auto-refresh timer (Heartbeat) - Every 30 seconds for faster "live" feel
   useEffect(() => {
