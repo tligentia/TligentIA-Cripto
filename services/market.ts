@@ -19,7 +19,19 @@ const YAHOO_BASE_URL = 'https://query2.finance.yahoo.com/v8/finance/chart';
  */
 const fetchWithProxy = async (targetUrl: string): Promise<any> => {
     const proxies = [
-        // Strategy 1: AllOrigins (JSON Wrapper) - Highest reliability for text/json
+        // Strategy 1: CorsProxy.io (Direct) - Fastest
+        {
+            name: 'CorsProxy',
+            url: (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+            extract: (json: any) => json
+        },
+        // Strategy 2: CodeTabs (Direct) - Good speed, stricter rate limits
+        {
+            name: 'CodeTabs',
+            url: (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+            extract: (json: any) => json
+        },
+        // Strategy 3: AllOrigins (JSON Wrapper) - Slower but high reliability
         {
             name: 'AllOrigins',
             url: (u: string) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
@@ -29,18 +41,6 @@ const fetchWithProxy = async (targetUrl: string): Promise<any> => {
                 }
                 return null;
             }
-        },
-        // Strategy 2: CorsProxy.io (Direct)
-        {
-            name: 'CorsProxy',
-            url: (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-            extract: (json: any) => json
-        },
-        // Strategy 3: CodeTabs (Direct) - Good fallback but strict rate limits
-        {
-            name: 'CodeTabs',
-            url: (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-            extract: (json: any) => json
         }
     ];
 
@@ -207,8 +207,9 @@ const fetchCryptoData = async (symbol: string): Promise<MarketData> => {
 const fetchYahooData = async (symbol: string): Promise<MarketData> => {
     // Helper to fetch and parse Yahoo JSON
     const fetchYahooFrame = async (interval: string, range: string) => {
-        // Add cache buster to avoid stale proxy data
-        const targetUrl = `${YAHOO_BASE_URL}/${symbol}?interval=${interval}&range=${range}&events=history&includeAdjustedClose=true&_=${Date.now()}`;
+        // Cache buster: Round to nearest 30 seconds to allow short-term caching by browser/proxy
+        const cacheBuster = Math.floor(Date.now() / 30000);
+        const targetUrl = `${YAHOO_BASE_URL}/${symbol}?interval=${interval}&range=${range}&events=history&includeAdjustedClose=true&_=${cacheBuster}`;
         
         try {
             const json = await fetchWithProxy(targetUrl);
@@ -357,7 +358,9 @@ export const fetchHistoricalSeries = async (symbol: string, type: AssetType, ran
         }
 
         if (type === 'STOCK') {
-            const targetUrl = `${YAHOO_BASE_URL}/${symbol}?interval=${yInterval}&range=${yRange}&events=history&includeAdjustedClose=true&_=${Date.now()}`;
+            // Cache buster: 30 seconds to allow caching of proxies
+            const cacheBuster = Math.floor(Date.now() / 30000);
+            const targetUrl = `${YAHOO_BASE_URL}/${symbol}?interval=${yInterval}&range=${yRange}&events=history&includeAdjustedClose=true&_=${cacheBuster}`;
             const json = await fetchWithProxy(targetUrl);
             const result = json?.chart?.result?.[0];
             
@@ -414,7 +417,8 @@ const checkYahoo = async (cleanInput: string): Promise<Asset | null> => {
     try {
         // Check if symbol exists by requesting a small chart
         // Add cache buster
-        const targetUrl = `${YAHOO_BASE_URL}/${cleanInput}?interval=1d&range=1d&_=${Date.now()}`;
+        const cacheBuster = Math.floor(Date.now() / 60000);
+        const targetUrl = `${YAHOO_BASE_URL}/${cleanInput}?interval=1d&range=1d&_=${cacheBuster}`;
         
         // Use the robust fetchWithProxy here too
         const json = await fetchWithProxy(targetUrl);
