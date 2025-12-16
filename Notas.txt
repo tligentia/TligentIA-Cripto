@@ -20,3 +20,5 @@ Añadir favicon e icon
 
 Revisados:
 -----------------------------
+
+Comprobador 
