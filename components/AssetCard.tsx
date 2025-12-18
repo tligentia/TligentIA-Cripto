@@ -313,7 +313,7 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
         </div>
       </div>
       {aiAnalysis && <OracleModal symbol={asset.symbol} analysis={aiAnalysis} onClose={() => setAiAnalysis(null)} />}
-      {showFundamental && <FundamentalModal asset={asset} onClose={() => setShowFundamental(false)} />}
+      {showFundamental && <FundamentalModal asset={asset} apiKey={apiKey} onClose={() => setShowFundamental(false)} />}
       {showProfiles && (profilesLoading || profilesAnalysis ? (<ProfilesModal symbol={asset.symbol} analysis={profilesAnalysis || "Analizando perfiles..."} onClose={() => { setShowProfiles(false); setProfilesAnalysis(null); }} />) : null)}
       {showChart && <ChartModal symbol={asset.symbol} type={asset.type || 'CRYPTO'} onClose={() => setShowChart(false)} />}
       {showMA20 && <MA20Modal symbol={asset.symbol} price={daily.price} ma20={daily.ma20} onClose={() => setShowMA20(false)} />}

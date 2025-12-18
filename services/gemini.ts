@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const generateGeminiContent = async (prompt: string, userApiKey?: string): Promise<string> => {
-  // Prioritize user key, fallback to env, then empty
+  // Priorizar la clave del usuario, luego la del entorno
   const keyToUse = userApiKey || process.env.API_KEY || '';
 
   if (!keyToUse) {
@@ -9,17 +9,16 @@ export const generateGeminiContent = async (prompt: string, userApiKey?: string)
   }
 
   try {
-    // Re-instantiate per request to support dynamic keys
     const ai = new GoogleGenAI({ apiKey: keyToUse });
     
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    return response.text || "No response generated.";
+    return response.text || "No se pudo generar una respuesta.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    throw error; // Propagate error to handle UI feedback
+    throw error;
   }
 };
 
@@ -73,12 +72,11 @@ export const getSmartRecommendation = async (
     try {
         const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             contents: prompt,
         });
         
         const text = response.text?.trim() || "";
-        // Clean markdown if present
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         const data = JSON.parse(jsonStr);
         
