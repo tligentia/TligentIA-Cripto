@@ -16,10 +16,10 @@ interface Props {
 }
 
 const GeneralDashboard: React.FC<Props> = ({ userAssets, currency, rate, onAddClick, onDelete, onToggleFavorite, onMove, refreshTrigger = 0 }) => {
-  // Initialize state from localStorage or default to '1W'
+  // Initialize state from localStorage or default to '1D' (Changed from 1W)
   const [selectedRange, setSelectedRange] = useState<TimeRange>(() => {
       const saved = localStorage.getItem('criptogo_dashboard_range');
-      return (saved as TimeRange) || '1W';
+      return (saved as TimeRange) || '1D';
   });
   
   const [autoRefreshTrigger, setAutoRefreshTrigger] = useState(0);

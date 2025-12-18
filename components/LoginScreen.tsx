@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -8,28 +8,64 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (error) {
-        // Clear pin on next keypress after an error
-        setPin('');
-        setError(false);
+  // Generate a 4x4 grid of unique characters including those needed for the PINs
+  const gridChars = useMemo(() => {
+    // Required characters for '7887' and 'STAR'
+    const required = ['7', '8', 'S', 'T', 'A', 'R'];
+    const filler = 'BCDEFGHIJKMNOPQUVWXYZ01234569'.split('');
+    
+    let combined = [...required];
+    
+    // Add unique fillers until we have exactly 16
+    while (combined.length < 16) {
+      const randomFiller = filler[Math.floor(Math.random() * filler.length)];
+      if (!combined.includes(randomFiller)) {
+        combined.push(randomFiller);
+      }
     }
+    
+    // Fisher-Yates shuffle
+    for (let i = combined.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [combined[i], combined[j]] = [combined[j], combined[i]];
+    }
+    
+    return combined;
+  }, []);
 
-    if (event.key === 'Backspace') {
-      setPin(prevPin => prevPin.slice(0, -1));
-    } else if (/^[a-zA-Z0-9]$/.test(event.key) && pin.length < 4) {
-      setPin(prevPin => prevPin + event.key);
+  const handleInput = useCallback((char: string) => {
+    if (error) return;
+    if (pin.length < 4) {
+      setPin(prev => prev + char.toUpperCase());
     }
   }, [pin.length, error]);
 
+  const handleBackspace = useCallback(() => {
+    setPin(prev => prev.slice(0, -1));
+  }, []);
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (error) {
+      setPin('');
+      setError(false);
+      return;
+    }
+
+    if (event.key === 'Backspace') {
+      handleBackspace();
+    } else if (/^[a-zA-Z0-9]$/.test(event.key) && pin.length < 4) {
+      handleInput(event.key);
+    }
+  }, [pin.length, error, handleInput, handleBackspace]);
+
   useEffect(() => {
     if (pin.length === 4) {
-      const validPins = ['7887', 'star', 'STAR'];
-      if (validPins.includes(pin)) {
+      const validPins = ['7887', 'STAR'];
+      // We normalize everything to uppercase for comparison since matrix is uppercase
+      if (validPins.includes(pin.toUpperCase())) {
         onLoginSuccess();
       } else {
         setError(true);
-        // Let the shake animation play, then clear
         setTimeout(() => {
           setPin('');
           setError(false);
@@ -45,28 +81,69 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     };
   }, [handleKeyDown]);
 
-  const pinBoxes = Array.from({ length: 4 }).map((_, i) => (
-    <div
-      key={i}
-      className={`w-14 h-16 flex items-center justify-center text-4xl font-bold border-2 rounded-lg transition-colors duration-200 ${error ? 'border-red-500 text-red-500' : (pin[i] ? 'border-gray-700 text-gray-900' : 'border-gray-300')}`}
-    >
-      {pin[i] ? '*' : ''}
-    </div>
-  ));
-
   return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-60 z-[999] flex justify-center items-center backdrop-blur-sm" aria-modal="true" role="dialog">
-      <div className={`p-8 bg-white rounded-xl shadow-2xl text-center transform transition-transform border border-gray-200 ${error ? 'animate-shake' : ''}`}>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2" id="login-title">⭐ Acceso Requerido</h2>
-        <p className="text-gray-500 mb-6" id="login-description">Por favor, introduce tu PIN de 4 dígitos.</p>
-        <div className="flex justify-center gap-4 mb-6" aria-labelledby="login-title">
-          {pinBoxes}
+    <div className="fixed inset-0 bg-white z-[999] flex flex-col justify-center items-center font-sans overflow-hidden" aria-modal="true" role="dialog">
+      <div className={`max-w-xs w-full px-6 flex flex-col items-center transform transition-transform ${error ? 'animate-shake' : ''}`}>
+        
+        {/* Logo / Header */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border-2 border-red-700 mb-4">
+             <span className="text-red-700 font-black text-xl">GO</span>
+          </div>
+          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase" id="login-title">Acceso Restringido</h2>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1" id="login-description">Terminal v25.12T</p>
         </div>
-        <p className="text-xs text-gray-400">Introduce el PIN para continuar.</p>
+
+        {/* PIN Display Boxes - Character Hidden with * */}
+        <div className="flex justify-center gap-3 mb-10" aria-labelledby="login-title">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className={`w-12 h-14 flex items-center justify-center text-3xl font-black border-b-4 transition-all duration-200 
+                ${error ? 'border-red-600 text-red-600' : (pin[i] ? 'border-gray-900 text-gray-900' : 'border-gray-100 text-gray-200')}`}
+            >
+              {pin[i] ? '*' : '•'}
+            </div>
+          ))}
+        </div>
+
+        {/* 4x4 Matrix Grid - Larger Characters */}
+        <div className="grid grid-cols-4 gap-2 w-full mb-8">
+          {gridChars.map((char, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleInput(char)}
+              disabled={pin.length >= 4 || error}
+              className="aspect-square flex items-center justify-center text-3xl font-black text-gray-900 border border-gray-100 rounded-2xl hover:bg-gray-900 hover:text-white hover:border-gray-900 active:scale-95 transition-all disabled:opacity-30"
+            >
+              {char}
+            </button>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="w-full flex justify-between items-center px-2">
+            <button 
+                onClick={handleBackspace}
+                className="text-[10px] font-bold text-gray-400 hover:text-red-700 uppercase tracking-wider transition-colors"
+            >
+                Borrar
+            </button>
+            <span className="text-[10px] font-bold text-gray-300 font-mono tracking-tighter uppercase">
+                Sistema Protegido
+            </span>
+        </div>
+
       </div>
+
+      {/* Styles for the shake animation and transitions */}
       <style>{`
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); } 20%, 40%, 60%, 80% { transform: translateX(10px); } } 
-        .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 
+          0%, 100% { transform: translateX(0); } 
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); } 
+          20%, 40%, 60%, 80% { transform: translateX(6px); } 
+        } 
+        .animate-shake { animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both; }
       `}</style>
     </div>
   );

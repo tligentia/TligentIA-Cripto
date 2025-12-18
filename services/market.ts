@@ -437,6 +437,7 @@ const checkYahoo = async (cleanInput: string): Promise<Asset | null> => {
 };
 
 export const resolveAsset = async (input: string, type: AssetType): Promise<Asset | null> => {
+  if (!input) return null;
   const cleanInput = input.toUpperCase().trim();
   
   // STRICT CHECKING BASED ON SELECTED PANEL

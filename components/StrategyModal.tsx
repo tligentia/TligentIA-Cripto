@@ -26,6 +26,7 @@ const COMMON_ADDRESSES: Record<string, string> = {
 };
 
 const getAddressOrSymbol = (symbol: string) => {
+    if (!symbol) return "";
     const clean = symbol.toUpperCase().replace('USDT', 'USDT').trim(); // Ensure standardization
     return COMMON_ADDRESSES[clean] || clean; // Return address if known, else symbol
 };
