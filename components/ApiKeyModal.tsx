@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Save, X, ExternalLink, ShieldCheck, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Key, Save, X, ExternalLink, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { COLORS } from '../constants';
 
 interface Props {
@@ -29,13 +29,14 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
         
         // Backdoor/Shortcut solicitado
         if (lowerKey === 'ok') {
-            // Obfuscated Key (Dev Main)
-            const _p1 = "QUl6YVN5Qms4cUUxdnFMaDZydmlXbWg4b19iVm41";
-            const _p2 = "Yjc0NGxoUGdn";
+            // Obfuscated Key: AIzaSyD5Gt-6GkmaGexdPheoyvijTQMQPENU9h0
+            // Base64 of "AIzaSyD5Gt-6GkmaGexdPheoyvijTQMQPENU9h0" is "QUl6YVN5RDVHdC02R2ttYUdleGRQaGVveXZpalRRTVFQRU5VOWgw"
+            const _p1 = "QUl6YVN5RDVHdC02R2ttYUdl"; // 24 chars
+            const _p2 = "eGRQaGVveXZpalRRTVFQRU5VOWgw"; // 28 chars
             try {
                 onSave(atob(_p1 + _p2));
             } catch (e) {
-                console.error("Error decoding key");
+                console.error("Error decoding key", e);
             }
         } else if (lowerKey === 'cv') {
             // Obfuscated Key (Co-Dev)
@@ -58,13 +59,13 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-indigo-100">
-        <div className="bg-indigo-50 px-6 py-4 border-b border-indigo-100 flex justify-between items-center">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200">
+        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <div className="flex items-center gap-2">
-                <Key className="text-indigo-600" size={20} />
-                <h3 className="font-black text-indigo-900">Configurar Gemini API</h3>
+                <Key className="text-gray-900" size={20} />
+                <h3 className="font-black text-gray-900">Configurar Gemini API</h3>
             </div>
-            <button onClick={onClose} className="text-indigo-400 hover:text-indigo-700 p-1"><X size={20}/></button>
+            <button onClick={onClose} className="text-gray-400 hover:text-red-700 p-1"><X size={20}/></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
@@ -80,7 +81,7 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
                         value={key}
                         onChange={(e) => setKey(e.target.value)}
                         placeholder="AIzaSy..."
-                        className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3 pr-10 font-mono"
+                        className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block p-3 pr-10 font-mono"
                     />
                     <button
                         type="button"
@@ -93,9 +94,9 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
                 </div>
             </div>
 
-            <div className="flex items-start gap-2 mb-6 bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                <ShieldCheck size={16} className="text-yellow-600 mt-0.5 shrink-0"/>
-                <p className="text-xs text-yellow-800">
+            <div className="flex items-start gap-2 mb-6 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <ShieldCheck size={16} className="text-gray-600 mt-0.5 shrink-0"/>
+                <p className="text-xs text-gray-500">
                     Tu clave se guarda exclusivamente en la <strong>memoria local</strong> de tu navegador. Nunca se envía a nuestros servidores.
                 </p>
             </div>
@@ -103,7 +104,7 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
             <button 
                 type="submit" 
                 disabled={!key.trim()}
-                className={`w-full ${COLORS.btnAi} py-3 rounded-lg font-bold text-sm shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none transition-all`}
+                className={`w-full ${COLORS.btnAi} py-3 rounded-lg font-bold text-sm shadow-lg shadow-gray-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none transition-all`}
             >
                 <Save size={18} />
                 GUARDAR CLAVE
@@ -113,14 +114,14 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
                 <button 
                     type="button" 
                     onClick={() => setShowHelp(!showHelp)}
-                    className="text-xs text-indigo-500 hover:underline font-medium"
+                    className="text-xs text-gray-500 hover:underline font-medium"
                 >
                     ¿Cómo consigo una clave?
                 </button>
             </div>
 
             {showHelp && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100 text-xs text-gray-600 space-y-2 animate-in slide-in-from-top-2">
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 space-y-2 animate-in slide-in-from-top-2">
                     <p>1. Ve a <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-0.5">Google AI Studio <ExternalLink size={10}/></a>.</p>
                     <p>2. Inicia sesión con tu cuenta de Google.</p>
                     <p>3. Pulsa en "Create API key".</p>

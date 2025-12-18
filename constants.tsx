@@ -2,20 +2,20 @@ import { TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react';
 import { Asset, StageConfig, CurrencyConfig, CurrencyCode } from './types';
 
 export const COLORS = {
-  bg: 'bg-gray-50',
+  bg: 'bg-white',
   card: 'bg-white',
   textMain: 'text-gray-900',
-  textSub: 'text-gray-600',
+  textSub: 'text-gray-500',
   accentRed: 'text-red-700',
   border: 'border-gray-200',
-  btnPrimary: 'bg-gray-900 hover:bg-gray-800 text-white',
+  btnPrimary: 'bg-gray-900 hover:bg-black text-white',
   btnDanger: 'text-red-600 hover:bg-red-50',
-  btnAi: 'bg-indigo-600 hover:bg-indigo-700 text-white', 
-  btnProfiles: 'bg-slate-700 hover:bg-slate-800 text-white',
-  btnChart: 'bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300',
-  aiBg: 'bg-indigo-50',
-  aiText: 'text-indigo-950',
-  aiBorder: 'border-indigo-100'
+  btnAi: 'bg-gray-900 hover:bg-black text-white', 
+  btnProfiles: 'bg-gray-700 hover:bg-gray-800 text-white',
+  btnChart: 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200',
+  aiBg: 'bg-gray-50',
+  aiText: 'text-gray-900',
+  aiBorder: 'border-gray-200'
 };
 
 export const DEFAULT_ASSETS: Asset[] = [
@@ -43,10 +43,10 @@ export const TOP_STOCKS: Asset[] = [
 ];
 
 export const STAGES: Record<number, StageConfig> = {
-  1: { id: 1, name: 'Acumulación', action: 'VIGILAR', color: 'text-gray-500', bg: 'bg-gray-100', icon: Minus },
-  2: { id: 2, name: 'Alcista', action: 'COMPRAR', color: 'text-emerald-700', bg: 'bg-emerald-50', icon: TrendingUp },
-  3: { id: 3, name: 'Distribución', action: 'ESPERAR', color: 'text-orange-600', bg: 'bg-orange-50', icon: Activity },
-  4: { id: 4, name: 'Bajista', action: 'VENDER', color: 'text-red-700', bg: 'bg-red-50', icon: TrendingDown },
+  1: { id: 1, name: 'Acumulación', action: 'VIGILAR', color: 'text-gray-500', bg: 'bg-gray-50', icon: Minus },
+  2: { id: 2, name: 'Alcista', action: 'COMPRAR', color: 'text-red-700', bg: 'bg-red-50/30', icon: TrendingUp },
+  3: { id: 3, name: 'Distribución', action: 'ESPERAR', color: 'text-gray-700', bg: 'bg-gray-100', icon: Activity },
+  4: { id: 4, name: 'Bajista', action: 'VENDER', color: 'text-red-900', bg: 'bg-red-50', icon: TrendingDown },
 };
 
 export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {

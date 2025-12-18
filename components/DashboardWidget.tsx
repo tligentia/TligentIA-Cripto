@@ -16,9 +16,10 @@ interface Props {
   onDelete: (symbol: string) => void;
   onToggleFavorite: (symbol: string) => void;
   onMove: (symbol: string, direction: 'left' | 'right') => void;
+  onClick?: (asset: Asset) => void;
 }
 
-const DashboardWidget: React.FC<Props> = ({ asset, currency, rate, range, refreshTrigger = 0, index, total, onDelete, onToggleFavorite, onMove }) => {
+const DashboardWidget: React.FC<Props> = ({ asset, currency, rate, range, refreshTrigger = 0, index, total, onDelete, onToggleFavorite, onMove, onClick }) => {
   // Added 'diff' to the state interface to store absolute change
   const [data, setData] = useState<{ price: number, change: number, diff: number, history: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,7 +100,10 @@ const DashboardWidget: React.FC<Props> = ({ asset, currency, rate, range, refres
   const sign = isPositive ? '+' : '-';
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+    <div 
+      onClick={() => onClick?.(asset)}
+      className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 relative overflow-hidden group cursor-pointer"
+    >
       
       {/* HEADER: Symbol + Star + % Change */}
       <div className="flex justify-between items-start mb-2 relative z-10">
@@ -158,10 +162,10 @@ const DashboardWidget: React.FC<Props> = ({ asset, currency, rate, range, refres
           
           {/* Move Buttons */}
           <div className="flex bg-gray-100 rounded p-0.5 border border-gray-200">
-             <button onClick={() => onMove(asset.symbol, 'left')} disabled={index === 0} className="p-1 hover:bg-white hover:shadow-sm rounded disabled:opacity-30 transition-all text-gray-600">
+             <button onClick={(e) => { e.stopPropagation(); onMove(asset.symbol, 'left'); }} disabled={index === 0} className="p-1 hover:bg-white hover:shadow-sm rounded disabled:opacity-30 transition-all text-gray-600">
                  <ChevronLeft size={10} />
              </button>
-             <button onClick={() => onMove(asset.symbol, 'right')} disabled={index === total - 1} className="p-1 hover:bg-white hover:shadow-sm rounded disabled:opacity-30 transition-all text-gray-600">
+             <button onClick={(e) => { e.stopPropagation(); onMove(asset.symbol, 'right'); }} disabled={index === total - 1} className="p-1 hover:bg-white hover:shadow-sm rounded disabled:opacity-30 transition-all text-gray-600">
                  <ChevronRight size={10} />
              </button>
           </div>
@@ -172,7 +176,7 @@ const DashboardWidget: React.FC<Props> = ({ asset, currency, rate, range, refres
                 <Lock size={10} />
              </div>
           ) : (
-             <button onClick={() => onDelete(asset.symbol)} className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded transition-colors" title="Eliminar">
+             <button onClick={(e) => { e.stopPropagation(); onDelete(asset.symbol); }} className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded transition-colors" title="Eliminar">
                 <Trash2 size={10} />
              </button>
           )}

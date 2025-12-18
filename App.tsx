@@ -290,6 +290,12 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  const handleWidgetNavigation = (asset: Asset) => {
+    setMarketMode(asset.type === 'STOCK' ? 'STOCK' : 'CRYPTO');
+    setView('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <>
     {!isAuthenticated && <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />}
@@ -432,6 +438,7 @@ export default function App() {
                 onDelete={handleDelete}
                 onToggleFavorite={handleToggleFavorite}
                 onMove={moveAsset}
+                onWidgetClick={handleWidgetNavigation}
                 refreshTrigger={refreshTrigger}
             />
         </div>

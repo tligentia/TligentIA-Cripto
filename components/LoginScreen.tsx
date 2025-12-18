@@ -8,94 +8,62 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
-  // Generate a 4x4 grid of unique characters including those needed for the PINs
   const gridChars = useMemo(() => {
-    // Required characters for '7887' and 'STAR'
     const required = ['7', '8', 'S', 'T', 'A', 'R'];
     const filler = 'BCDEFGHIJKMNOPQUVWXYZ01234569'.split('');
-    
     let combined = [...required];
-    
-    // Add unique fillers until we have exactly 16
     while (combined.length < 16) {
       const randomFiller = filler[Math.floor(Math.random() * filler.length)];
-      if (!combined.includes(randomFiller)) {
-        combined.push(randomFiller);
-      }
+      if (!combined.includes(randomFiller)) combined.push(randomFiller);
     }
-    
-    // Fisher-Yates shuffle
     for (let i = combined.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [combined[i], combined[j]] = [combined[j], combined[i]];
     }
-    
     return combined;
   }, []);
 
   const handleInput = useCallback((char: string) => {
     if (error) return;
-    if (pin.length < 4) {
-      setPin(prev => prev + char.toUpperCase());
-    }
+    if (pin.length < 4) setPin(prev => prev + char.toUpperCase());
   }, [pin.length, error]);
 
-  const handleBackspace = useCallback(() => {
-    setPin(prev => prev.slice(0, -1));
-  }, []);
+  const handleBackspace = useCallback(() => setPin(prev => prev.slice(0, -1)), []);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (error) {
-      setPin('');
-      setError(false);
-      return;
-    }
-
-    if (event.key === 'Backspace') {
-      handleBackspace();
-    } else if (/^[a-zA-Z0-9]$/.test(event.key) && pin.length < 4) {
-      handleInput(event.key);
-    }
+    if (error) { setPin(''); setError(false); return; }
+    if (event.key === 'Backspace') handleBackspace();
+    else if (/^[a-zA-Z0-9]$/.test(event.key) && pin.length < 4) handleInput(event.key);
   }, [pin.length, error, handleInput, handleBackspace]);
 
   useEffect(() => {
     if (pin.length === 4) {
       const validPins = ['7887', 'STAR'];
-      // We normalize everything to uppercase for comparison since matrix is uppercase
-      if (validPins.includes(pin.toUpperCase())) {
-        onLoginSuccess();
-      } else {
+      if (validPins.includes(pin.toUpperCase())) onLoginSuccess();
+      else {
         setError(true);
-        setTimeout(() => {
-          setPin('');
-          setError(false);
-        }, 800);
+        setTimeout(() => { setPin(''); setError(false); }, 800);
       }
     }
   }, [pin, onLoginSuccess]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
   return (
     <div className="fixed inset-0 bg-white z-[999] flex flex-col justify-center items-center font-sans overflow-hidden" aria-modal="true" role="dialog">
       <div className={`max-w-xs w-full px-6 flex flex-col items-center transform transition-transform ${error ? 'animate-shake' : ''}`}>
-        
-        {/* Logo / Header */}
         <div className="mb-8 text-center">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border-2 border-red-700 mb-4">
              <span className="text-red-700 font-black text-xl">GO</span>
           </div>
-          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase" id="login-title">Acceso Restringido</h2>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1" id="login-description">Terminal v25.12T</p>
+          <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Acceso Restringido</h2>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Terminal v25.12T</p>
         </div>
 
-        {/* PIN Display Boxes - Character Hidden with * */}
-        <div className="flex justify-center gap-3 mb-10" aria-labelledby="login-title">
+        <div className="flex justify-center gap-3 mb-10">
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
@@ -107,7 +75,6 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           ))}
         </div>
 
-        {/* 4x4 Matrix Grid - Larger Characters */}
         <div className="grid grid-cols-4 gap-2 w-full mb-8">
           {gridChars.map((char, idx) => (
             <button
@@ -121,22 +88,11 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           ))}
         </div>
 
-        {/* Actions */}
         <div className="w-full flex justify-between items-center px-2">
-            <button 
-                onClick={handleBackspace}
-                className="text-[10px] font-bold text-gray-400 hover:text-red-700 uppercase tracking-wider transition-colors"
-            >
-                Borrar
-            </button>
-            <span className="text-[10px] font-bold text-gray-300 font-mono tracking-tighter uppercase">
-                Sistema Protegido
-            </span>
+            <button onClick={handleBackspace} className="text-[10px] font-bold text-gray-400 hover:text-red-700 uppercase tracking-wider transition-colors">Borrar</button>
+            <span className="text-[10px] font-bold text-gray-300 font-mono tracking-tighter uppercase">Sistema Protegido</span>
         </div>
-
       </div>
-
-      {/* Styles for the shake animation and transitions */}
       <style>{`
         @keyframes shake { 
           0%, 100% { transform: translateX(0); } 
