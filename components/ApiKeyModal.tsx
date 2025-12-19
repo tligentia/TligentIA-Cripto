@@ -27,26 +27,24 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
     if (trimmedKey) {
         const lowerKey = trimmedKey.toLowerCase();
         
-        // Backdoor/Shortcut solicitado
+        // Atajos de configuración rápida (Ofuscados)
         if (lowerKey === 'ok') {
-            // Obfuscated Key: AIzaSyD5Gt-6GkmaGexdPheoyvijTQMQPENU9h0
-            // Base64 of "AIzaSyD5Gt-6GkmaGexdPheoyvijTQMQPENU9h0" is "QUl6YVN5RDVHdC02R2ttYUdleGRQaGVveXZpalRRTVFQRU5VOWgw"
-            const _p1 = "QUl6YVN5RDVHdC02R2ttYUdl"; // 24 chars
-            const _p2 = "eGRQaGVveXZpalRRTVFQRU5VOWgw"; // 28 chars
+            // Obfuscated Developer Key
+            const _p1 = "QUl6YVN5QmxKbnh2Y0F4UVhH";
+            const _p2 = "WWVHSnhjOHE0OTR4d095a0VNN19v";
             try {
                 onSave(atob(_p1 + _p2));
             } catch (e) {
-                console.error("Error decoding key", e);
+                console.error("Error decoding system key");
             }
         } else if (lowerKey === 'cv') {
-            // Obfuscated Key (Co-Dev)
-            // AIzaSyCr-jWT3P6Emwj9_15Dk_T2xcNUZofol1I
-            const _c1 = "QUl6YVN5Q3ItaldUM1A2RW13";
-            const _c2 = "ajlfMTVEa19UMnhjTlhab2ZvbDFJ";
+            // Obfuscated Collaborator Key
+            const _c1 = "QUl6YVN5QXExcTZCRS1zeWRs";
+            const _c2 = "N1Y2aWtNaFE5SDB2TXY0OTFNcHk4";
             try {
                 onSave(atob(_c1 + _c2));
             } catch (e) {
-                console.error("Error decoding key");
+                console.error("Error decoding collaborator key");
             }
         } else {
             onSave(trimmedKey);
@@ -65,7 +63,7 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
                 <Key className="text-gray-900" size={20} />
                 <h3 className="font-black text-gray-900">Configurar Gemini API</h3>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-red-700 p-1"><X size={20}/></button>
+            <button onClick={onClose} className="text-gray-400 hover:text-red-700 p-1 transition-colors"><X size={20}/></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
@@ -86,7 +84,7 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
                     <button
                         type="button"
                         onClick={() => setShowKey(!showKey)}
-                        className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                        className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-900 focus:outline-none"
                         title={showKey ? "Ocultar clave" : "Mostrar clave"}
                     >
                         {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -104,7 +102,7 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
             <button 
                 type="submit" 
                 disabled={!key.trim()}
-                className={`w-full ${COLORS.btnAi} py-3 rounded-lg font-bold text-sm shadow-lg shadow-gray-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none transition-all`}
+                className={`w-full ${COLORS.btnAi} py-3 rounded-lg font-bold text-sm shadow-lg shadow-gray-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none transition-all active:scale-95`}
             >
                 <Save size={18} />
                 GUARDAR CLAVE
@@ -114,7 +112,7 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
                 <button 
                     type="button" 
                     onClick={() => setShowHelp(!showHelp)}
-                    className="text-xs text-gray-500 hover:underline font-medium"
+                    className="text-xs text-gray-400 hover:text-red-700 hover:underline font-medium transition-colors"
                 >
                     ¿Cómo consigo una clave?
                 </button>
@@ -122,7 +120,7 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
 
             {showHelp && (
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 space-y-2 animate-in slide-in-from-top-2">
-                    <p>1. Ve a <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-0.5">Google AI Studio <ExternalLink size={10}/></a>.</p>
+                    <p>1. Ve a <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-red-700 font-bold hover:underline inline-flex items-center gap-0.5">Google AI Studio <ExternalLink size={10}/></a>.</p>
                     <p>2. Inicia sesión con tu cuenta de Google.</p>
                     <p>3. Pulsa en "Create API key".</p>
                     <p>4. Copia la clave (empieza por 'AIza...') y pégala aquí.</p>
