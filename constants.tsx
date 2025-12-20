@@ -1,3 +1,4 @@
+
 import { TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react';
 import { Asset, StageConfig, CurrencyConfig, CurrencyCode } from './types';
 
@@ -43,10 +44,10 @@ export const TOP_STOCKS: Asset[] = [
 ];
 
 export const STAGES: Record<number, StageConfig> = {
-  1: { id: 1, name: 'Acumulación', action: 'VIGILAR', color: 'text-gray-500', bg: 'bg-gray-50', icon: Minus },
-  2: { id: 2, name: 'Alcista', action: 'COMPRAR', color: 'text-red-700', bg: 'bg-red-50/30', icon: TrendingUp },
-  3: { id: 3, name: 'Distribución', action: 'ESPERAR', color: 'text-gray-700', bg: 'bg-gray-100', icon: Activity },
-  4: { id: 4, name: 'Bajista', action: 'VENDER', color: 'text-red-900', bg: 'bg-red-50', icon: TrendingDown },
+  1: { id: 1, name: 'Acumulación', action: 'VIGILAR', color: 'text-emerald-500', bg: 'bg-emerald-50 border-emerald-100', icon: Minus },
+  2: { id: 2, name: 'Alcista', action: 'COMPRAR', color: 'text-emerald-900', bg: 'bg-emerald-200 border-emerald-300', icon: TrendingUp },
+  3: { id: 3, name: 'Distribución', action: 'ESPERAR', color: 'text-orange-500', bg: 'bg-orange-50 border-orange-100', icon: Activity },
+  4: { id: 4, name: 'Bajista', action: 'VENDER', color: 'text-red-600', bg: 'bg-red-50 border-red-100', icon: TrendingDown },
 };
 
 export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
