@@ -39,7 +39,7 @@ const GeneralDashboard: React.FC<Props> = ({ userAssets, currency, rate, onAddCl
   const allStockSymbols = new Set(userAssets.filter(a => a.type === 'STOCK').map(a => a.symbol));
   const uniqueTopStocks = TOP_STOCKS.filter(s => !allStockSymbols.has(s.symbol));
   const displayAssets = [...userAssets, ...uniqueTopStocks];
-  const ranges: TimeRange[] = ['1H', '1D', '1W', '1M', 'YTD', '1Y', 'MAX'];
+  const ranges: TimeRange[] = ['1H', '1D', '1W', '1M', '3M', 'YTD', '1Y', 'MAX'];
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">

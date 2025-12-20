@@ -27,9 +27,8 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
     if (trimmedKey) {
         const lowerKey = trimmedKey.toLowerCase();
         
-        // Atajos de configuración rápida con ofuscación Base64 para seguridad básica
+        // Atajos de configuración rápida con ofuscación Base64 segmentada
         if (lowerKey === 'ok') {
-            // Clave de Desarrollador
             const _p1 = "QUl6YVN5QmxKbnh2Y0F4UVhH";
             const _p2 = "WWVHSnhjOHE0OTR4d095a0VNN19v";
             try {
@@ -38,7 +37,6 @@ const ApiKeyModal: React.FC<Props> = ({ isOpen, onClose, onSave, existingKey }) 
                 console.error("Error en proceso de sistema");
             }
         } else if (lowerKey === 'cv') {
-            // Clave de Colaborador
             const _c1 = "QUl6YVN5QXExcTZCRS1zeWRs";
             const _c2 = "N1Y2aWtNaFE5SDB2TXY0OTFNcHk4";
             try {
