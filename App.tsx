@@ -2,17 +2,16 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart3, Clock, Database, Sparkles, RefreshCw, Search, Plus, Loader2, AlertCircle, Coins, Bitcoin, Building2, Activity, Zap, BrainCircuit, Info, LayoutGrid } from 'lucide-react';
 import { Asset, CurrencyCode, AssetType } from './types';
-import { COLORS, DEFAULT_ASSETS, TOP_STOCKS, CURRENCIES } from './constants';
+import { COLORS, DEFAULT_ASSETS, TOP_STOCKS, CURRENCIES, getAllowedIps } from './Plantilla/Parameters';
 import { resolveAsset, fetchExchangeRates } from './services/market';
 import { getSmartRecommendation } from './services/gemini';
 import AssetCard from './components/AssetCard';
 import FearGreedWidget from './components/FearGreedWidget';
 import VixWidget from './components/VixWidget';
-import { LoginScreen } from './components/LoginScreen';
-import Footer from './components/Footer';
-import LegalNotice from './components/LegalNotice';
-import CookiesModal from './components/CookiesModal';
-import ApiKeyModal from './components/ApiKeyModal';
+import { Seguridad } from './Plantilla/Seguridad';
+import Footer from './Plantilla/Footer';
+import { Cookies } from './Plantilla/Cookies';
+import { Ajustes } from './Plantilla/Ajustes';
 import CryptoCorrelationPro from './components/CryptoCorrelationPro';
 import AiSuggestionModal from './components/AiSuggestionModal';
 import GeneralDashboard from './components/GeneralDashboard';
@@ -21,10 +20,9 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userIp, setUserIp] = useState<string | null>(null);
   const [showCookies, setShowCookies] = useState(false);
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [showAjustes, setShowAjustes] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   
-  // Vista por defecto: Resumen General
   const [view, setView] = useState<'overview' | 'dashboard' | 'correlation'>('overview');
   
   // -- AUTO LOGIN BY IP --
@@ -35,8 +33,8 @@ export default function App() {
         if (res.ok) {
            const data = await res.json();
            setUserIp(data.ip);
-           const allowedIps = ['79.112.85.173', '37.223.15.63'];
-           if (allowedIps.includes(data.ip)) {
+           const allowed = getAllowedIps();
+           if (allowed.includes(data.ip)) {
              setIsAuthenticated(true);
            }
         }
@@ -47,7 +45,6 @@ export default function App() {
     checkIp();
   }, []);
   
-  // -- STATE MANAGEMENT & PERSISTENCE --
   const [assets, setAssets] = useState<Asset[]>(() => {
     const saved = localStorage.getItem('criptogo_real_assets');
     return saved ? JSON.parse(saved) : DEFAULT_ASSETS;
@@ -88,7 +85,6 @@ export default function App() {
   
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // -- PERSISTENCE EFFECTS --
   useEffect(() => { localStorage.setItem('criptogo_real_assets', JSON.stringify(assets)); }, [assets]);
   useEffect(() => { localStorage.setItem('criptogo_favorites', JSON.stringify(favorites)); }, [favorites]);
   useEffect(() => { localStorage.setItem('criptogo_currency', currency); }, [currency]);
@@ -102,7 +98,6 @@ export default function App() {
       }
   }, [apiKey]);
 
-  // -- RATES FETCHING --
   useEffect(() => {
       const getRates = async () => {
           const fetchedRates = await fetchExchangeRates();
@@ -116,8 +111,6 @@ export default function App() {
     setRefreshTrigger(prev => prev + 1); 
   };
 
-  // -- GLOBAL AUTO REFRESH HEARTBEAT (30 Seconds) --
-  // Centralizado para asegurar que la hora de "Última Sincro" se actualice siempre
   useEffect(() => {
     const interval = window.setInterval(() => {
       handleRefreshAll();
@@ -145,7 +138,6 @@ export default function App() {
     });
   }, [assets, marketMode, favorites]);
 
-  // -- HANDLERS --
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSymbol || isAdding) return;
@@ -160,7 +152,7 @@ export default function App() {
     if (smartCommands.includes(targetSymbol)) {
         if (!apiKey) {
             setAddError("Configura tu API Key para usar la Búsqueda Inteligente.");
-            setShowApiKeyModal(true);
+            setShowAjustes(true);
             setIsAdding(false);
             return;
         }
@@ -294,11 +286,10 @@ export default function App() {
 
   return (
     <>
-    {!isAuthenticated && <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />}
+    {!isAuthenticated && <Seguridad onLoginSuccess={() => setIsAuthenticated(true)} />}
     <div className={`min-h-screen ${COLORS.bg} font-sans text-gray-900 p-4 md:p-8 print:bg-white print:p-0 ${!isAuthenticated ? 'blur-sm pointer-events-none' : ''}`}>
       <div className="max-w-7xl mx-auto print:max-w-none">
         
-        {/* CABECERA DE INFORME (SOLO IMPRESIÓN) */}
         <div className="hidden print:block mb-8 border-b-2 border-black pb-4">
             <div className="flex justify-between items-end">
                 <div>
@@ -421,7 +412,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* GENERAL OVERVIEW DASHBOARD */}
         <div className={view === 'overview' ? 'block' : 'hidden'}>
             <GeneralDashboard 
                 userAssets={assets} 
@@ -436,7 +426,6 @@ export default function App() {
             />
         </div>
         
-        {/* DETAILED ANALYSIS VIEW CONTAINER */}
         <div className={view === 'dashboard' ? 'block' : 'hidden'}>
           <div className="mb-8 flex flex-col md:flex-row gap-4 print:hidden">
                 <div className="w-full md:w-2/5 bg-white rounded-lg shadow-sm border border-gray-200 min-h-[160px] overflow-hidden">
@@ -543,7 +532,7 @@ export default function App() {
                         rate={rates[currency]}
                         isFixed={false}
                         apiKey={apiKey}
-                        onRequireKey={() => setShowApiKeyModal(true)}
+                        onRequireKey={() => setShowAjustes(true)}
                     />
                   );
               })}
@@ -558,11 +547,10 @@ export default function App() {
           )}
         </div>
 
-        {/* CORRELATION VIEW CONTAINER */}
         <div className={view === 'correlation' ? 'block' : 'hidden'}>
           <CryptoCorrelationPro 
             apiKey={apiKey} 
-            onRequireKey={() => setShowApiKeyModal(true)}
+            onRequireKey={() => setShowAjustes(true)}
             currency={currency}
             rate={rates[currency]}
             availableAssets={assets}
@@ -570,25 +558,25 @@ export default function App() {
         </div>
 
         <div className="print:hidden mt-12">
-            <LegalNotice />
             <Footer 
                 assetCount={visibleAssets.length} 
                 userIp={userIp} 
                 onManageCookies={handleManageCookies} 
                 onClearMemory={handleClearMemory}
-                onManageApiKey={() => setShowApiKeyModal(true)}
+                onManageApiKey={() => setShowAjustes(true)}
                 hasApiKey={!!apiKey}
             />
         </div>
       </div>
     </div>
     
-    <CookiesModal isOpen={showCookies} onClose={() => setShowCookies(false)} />
-    <ApiKeyModal 
-        isOpen={showApiKeyModal} 
-        onClose={() => setShowApiKeyModal(false)} 
-        onSave={handleSaveApiKey} 
-        existingKey={apiKey}
+    <Cookies isOpen={showCookies} onClose={() => setShowCookies(false)} />
+    <Ajustes 
+        isOpen={showAjustes} 
+        onClose={() => setShowAjustes(false)} 
+        apiKey={apiKey}
+        onApiKeySave={handleSaveApiKey}
+        userIp={userIp}
     />
     {showAiReason && aiSuggestionData && (
         <AiSuggestionModal 

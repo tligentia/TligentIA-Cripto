@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
-interface LoginScreenProps {
+interface SeguridadProps {
   onLoginSuccess: () => void;
 }
 
-export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
+export function Seguridad({ onLoginSuccess }: SeguridadProps) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
@@ -60,7 +61,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
              <span className="text-red-700 font-black text-xl">GO</span>
           </div>
           <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Acceso Restringido</h2>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Terminal v25.12T</p>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Terminal de Seguridad</p>
         </div>
 
         <div className="flex justify-center gap-3 mb-10">
