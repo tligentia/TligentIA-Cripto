@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, FileText, Loader2, Key, RefreshCw, HelpCircle, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
+import { X, FileText, Loader2, RefreshCw, HelpCircle, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { Asset } from '../types';
 import { generateGeminiContent } from '../services/gemini';
 

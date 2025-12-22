@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RefreshCw, Trash2, Calendar, CalendarDays, CalendarRange, Sparkles, Users, LineChart, Loader2, Zap, ArrowUpToLine, ArrowDownToLine, ChevronLeft, ChevronRight, X, Building2, Lock, Star, Activity } from 'lucide-react';
 import { Asset, MarketData, TimeframeAnalysis, CurrencyCode } from '../types';
-import { CURRENCIES, TOP_STOCKS } from '../constants';
+import { CURRENCIES } from '../constants';
 import { fetchAssetData } from '../services/market';
 import { generateGeminiContent } from '../services/gemini';
 import FundamentalModal from './FundamentalModal';
@@ -264,7 +264,7 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
           <div className="mt-2 p-2 text-xs bg-gray-50 border-l-4 border-red-900 rounded-r text-gray-900 font-medium flex justify-between items-start animate-in slide-in-from-left duration-300">
             <div className="flex-1 pr-2">
               <span className="block text-[8px] font-bold text-red-900 uppercase mb-1">Insight de Mercado:</span>
-              {matrixInsight}
+              <div className="font-sans leading-relaxed">{matrixInsight}</div>
             </div>
             <button onClick={() => setMatrixInsight(null)} className="text-gray-300 hover:text-gray-600 pt-0.5"><X size={12}/></button>
           </div>
@@ -274,7 +274,7 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
           <div className="mt-2 p-2 text-xs bg-gray-50 border-l-4 border-slate-950 rounded-r text-gray-900 font-medium flex justify-between items-start animate-in slide-in-from-left duration-300">
             <div className="flex-1 pr-2">
               <span className="block text-[8px] font-bold text-slate-950 uppercase mb-1">Análisis del Oráculo:</span>
-              {aiAnalysis}
+              <div className="font-sans leading-relaxed">{aiAnalysis}</div>
             </div>
             <button onClick={() => setAiAnalysis(null)} className="text-gray-300 hover:text-gray-600 pt-0.5"><X size={12}/></button>
           </div>
