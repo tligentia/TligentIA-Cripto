@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart3, Clock, Database, Sparkles, RefreshCw, Search, Plus, Loader2, AlertCircle, Coins, Bitcoin, Building2, Activity, Zap, BrainCircuit, Info, LayoutGrid } from 'lucide-react';
 import { Asset, CurrencyCode, AssetType } from './types';
@@ -23,7 +24,7 @@ export default function App() {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   
-  // Changed default view to 'overview'
+  // Vista por defecto: Resumen General
   const [view, setView] = useState<'overview' | 'dashboard' | 'correlation'>('overview');
   
   // -- AUTO LOGIN BY IP --
@@ -52,7 +53,6 @@ export default function App() {
     return saved ? JSON.parse(saved) : DEFAULT_ASSETS;
   });
 
-  // Favorites state
   const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem('criptogo_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -68,10 +68,8 @@ export default function App() {
     return (saved as AssetType) || 'CRYPTO';
   });
 
-  // API KEY STATE - Inicialización segura desde memoria
   const [apiKey, setApiKey] = useState<string>(() => {
       const stored = localStorage.getItem('criptogo_apikey');
-      // Aseguramos que cargamos una cadena válida si existe
       return (stored && stored !== 'undefined' && stored !== 'null') ? stored : '';
   });
 
@@ -80,7 +78,6 @@ export default function App() {
   const [newSymbol, setNewSymbol] = useState('');
   const [addError, setAddError] = useState<string | null>(null);
   
-  // AI Suggestion State
   const [aiSuggestionData, setAiSuggestionData] = useState<{symbol: string, reason: string, label: string} | null>(null);
   const [showAiReason, setShowAiReason] = useState(false);
 
@@ -97,7 +94,6 @@ export default function App() {
   useEffect(() => { localStorage.setItem('criptogo_currency', currency); }, [currency]);
   useEffect(() => { localStorage.setItem('criptogo_market_mode', marketMode); }, [marketMode]);
   
-  // Persist API Key - Lógica bidireccional (Guardar o Borrar)
   useEffect(() => { 
       if (apiKey && apiKey.trim().length > 0) {
           localStorage.setItem('criptogo_apikey', apiKey); 
@@ -115,7 +111,21 @@ export default function App() {
       getRates();
   }, [refreshTrigger]);
 
-  // -- CALCULATE VISIBLE ASSETS (Moved Up for AI Exclusions) --
+  const handleRefreshAll = () => { 
+    setLastUpdate(new Date()); 
+    setRefreshTrigger(prev => prev + 1); 
+  };
+
+  // -- GLOBAL AUTO REFRESH HEARTBEAT (30 Seconds) --
+  // Centralizado para asegurar que la hora de "Última Sincro" se actualice siempre
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      handleRefreshAll();
+    }, 30000); 
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const visibleAssets = useMemo(() => {
     let list: Asset[] = [];
     if (marketMode === 'CRYPTO') {
@@ -141,12 +151,11 @@ export default function App() {
     if (!newSymbol || isAdding) return;
     setIsAdding(true);
     setAddError(null);
-    setAiSuggestionData(null); // Clear previous suggestion
+    setAiSuggestionData(null); 
     
     let targetSymbol = newSymbol.trim();
     let isSmartSearch = false;
 
-    // --- SMART SEARCH LOGIC ---
     const smartCommands = ['?', '?+', '?++', '?-'];
     if (smartCommands.includes(targetSymbol)) {
         if (!apiKey) {
@@ -165,7 +174,6 @@ export default function App() {
             else if (targetSymbol === '?++') { cmd = 'MID'; label = 'Crecimiento Medio'; }
             else if (targetSymbol === '?-') { cmd = 'RISK'; label = 'Especulativo'; }
 
-            // Pass currently visible symbols as exclusions
             const excluded = visibleAssets.map(a => a.symbol);
             const suggestion = await getSmartRecommendation(cmd, marketMode, apiKey, excluded);
             
@@ -175,9 +183,8 @@ export default function App() {
                 return;
             }
             
-            targetSymbol = suggestion.symbol; // Override input with AI suggestion
+            targetSymbol = suggestion.symbol; 
             
-            // Set the full data for the UI and the Modal
             setAiSuggestionData({
                 symbol: suggestion.symbol,
                 reason: suggestion.reason,
@@ -191,33 +198,24 @@ export default function App() {
         }
     }
 
-    // STRICT SEARCH: We only search within the current marketMode
     const foundAsset = await resolveAsset(targetSymbol, marketMode);
     
     if (foundAsset) {
-        // Since we force the search by type, foundAsset.type will always match marketMode
-        
-        // 1. Check if already in user custom list (checking exact symbol AND type)
         const isUserAsset = assets.some(a => a.symbol === foundAsset.symbol && (a.type || 'CRYPTO') === marketMode);
-        
-        // 2. Check if it's a Default Top Stock (Only relevant if we are in STOCK mode)
         const isTopStock = marketMode === 'STOCK' && TOP_STOCKS.some(t => t.symbol === foundAsset.symbol);
 
         if (isUserAsset) { 
             setAddError(`El activo ${foundAsset.symbol} ya está en tu lista.`);
-            setAiSuggestionData(null); // Clear AI msg if duplicates
+            setAiSuggestionData(null);
         } else if (isTopStock) {
             setAddError(`El activo ${foundAsset.symbol} ya está incluido por defecto.`);
             setAiSuggestionData(null);
         } else { 
-            // Add new asset
             setAssets(prev => [foundAsset, ...prev]); 
             setNewSymbol(''); 
             if (!isSmartSearch) setAddError(null); 
-            // We KEEP aiSuggestionData so the user can see/click why it was added
         }
     } else { 
-        // Error message specific to the current panel
         if (marketMode === 'CRYPTO') {
             setAddError(`No encontrado "${targetSymbol}" en Binance (verifica USDT).`);
         } else {
@@ -237,7 +235,6 @@ export default function App() {
   };
 
   const handleDelete = (symbol: string) => setAssets(assets.filter(a => a.symbol !== symbol));
-  const handleRefreshAll = () => { setLastUpdate(new Date()); setRefreshTrigger(prev => prev + 1); };
 
   const handleSaveApiKey = (key: string) => {
       setApiKey(key);
@@ -271,7 +268,6 @@ export default function App() {
     setShowCookies(true);
   };
 
-  // Updated moveAsset to use symbol matching instead of index for robustness across views
   const moveAsset = (symbol: string, direction: 'left' | 'right') => {
     const realIndex = assets.findIndex(a => a.symbol === symbol);
     if (realIndex === -1) return; 
@@ -346,7 +342,6 @@ export default function App() {
 
                  <div className="flex gap-3 items-center">
                     
-                    {/* MARKET SELECTOR (CONDITIONAL: ONLY VISIBLE IN ANALYSIS VIEW) */}
                     {view === 'dashboard' && (
                         <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm animate-in fade-in zoom-in-95 duration-200">
                             <button 
@@ -367,7 +362,6 @@ export default function App() {
                         </div>
                     )}
 
-                    {/* View Switcher: Icons Only */}
                     <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm">
                         <button 
                             onClick={() => setView('overview')}
@@ -394,7 +388,6 @@ export default function App() {
 
                     <div className="h-4 w-px bg-gray-300"></div>
 
-                    {/* CURRENCY SELECTOR (Icon Only) */}
                     <div className="relative">
                         <button 
                             onClick={() => setCurrencyOpen(!currencyOpen)}
@@ -446,7 +439,6 @@ export default function App() {
         {/* DETAILED ANALYSIS VIEW CONTAINER */}
         <div className={view === 'dashboard' ? 'block' : 'hidden'}>
           <div className="mb-8 flex flex-col md:flex-row gap-4 print:hidden">
-                {/* WIDGETS Y FORMULARIO */}
                 <div className="w-full md:w-2/5 bg-white rounded-lg shadow-sm border border-gray-200 min-h-[160px] overflow-hidden">
                     {marketMode === 'CRYPTO' ? (
                        <FearGreedWidget />
@@ -468,7 +460,6 @@ export default function App() {
                                 </span>
                             </label>
                             
-                            {/* SMART COMMANDS LEGEND - INTERACTIVE */}
                             <div className={`absolute z-20 bg-indigo-900 text-white p-3 rounded-lg shadow-xl text-xs w-64 -mt-24 ml-10 transition-all duration-300 ${showSmartCommands ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'}`}>
                                 <div className="font-bold border-b border-indigo-700 pb-1 mb-1 flex items-center justify-between">
                                     <span className="flex items-center gap-1"><Sparkles size={10} className="text-yellow-400"/> IA Search Commands</span>
@@ -513,7 +504,6 @@ export default function App() {
                         </button>
                     </form>
                     
-                    {/* Error / AI Message Area */}
                     {addError ? (
                         <div className="mt-2 bg-red-50 border border-red-100 text-red-700 px-3 py-2 rounded text-xs flex items-center gap-2 animate-in slide-in-from-top-1 font-medium shadow-sm">
                             <AlertCircle size={14} className="flex-shrink-0" />
@@ -593,7 +583,6 @@ export default function App() {
       </div>
     </div>
     
-    {/* MODALS */}
     <CookiesModal isOpen={showCookies} onClose={() => setShowCookies(false)} />
     <ApiKeyModal 
         isOpen={showApiKeyModal} 

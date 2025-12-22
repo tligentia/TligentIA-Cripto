@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Plus } from 'lucide-react';
 import { Asset, CurrencyCode, TimeRange } from '../types';
@@ -22,20 +23,14 @@ const GeneralDashboard: React.FC<Props> = ({ userAssets, currency, rate, onAddCl
       return (saved as TimeRange) || '1D';
   });
   
-  const [autoRefreshTrigger, setAutoRefreshTrigger] = useState(0);
-
   useEffect(() => {
       localStorage.setItem('criptogo_dashboard_range', selectedRange);
   }, [selectedRange]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-        setAutoRefreshTrigger(prev => prev + 1);
-    }, 30000); 
-    return () => clearInterval(interval);
-  }, []);
-  
-  const combinedTrigger = refreshTrigger + autoRefreshTrigger;
+  // Se elimina el intervalo local. Ahora se confía plenamente en el `refreshTrigger` 
+  // que viene desde App.tsx cada 30 segundos, asegurando que la cabecera y los 
+  // widgets estén siempre sincronizados.
+
   const allStockSymbols = new Set(userAssets.filter(a => a.type === 'STOCK').map(a => a.symbol));
   const uniqueTopStocks = TOP_STOCKS.filter(s => !allStockSymbols.has(s.symbol));
   const displayAssets = [...userAssets, ...uniqueTopStocks];
@@ -86,7 +81,7 @@ const GeneralDashboard: React.FC<Props> = ({ userAssets, currency, rate, onAddCl
                 currency={currency} 
                 rate={rate}
                 range={selectedRange}
-                refreshTrigger={combinedTrigger}
+                refreshTrigger={refreshTrigger}
                 onDelete={onDelete}
                 onToggleFavorite={onToggleFavorite}
                 onMove={onMove}
