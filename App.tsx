@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart3, Clock, Database, Sparkles, RefreshCw, Search, Plus, Loader2, AlertCircle, Coins, Bitcoin, Building2, Activity, Zap, BrainCircuit, Info, LayoutGrid } from 'lucide-react';
 import { Asset, CurrencyCode, AssetType } from './types';
@@ -241,18 +240,6 @@ export default function App() {
           setFavorites(favorites.filter(f => f !== symbol));
       } else {
           setFavorites([...favorites, symbol]);
-      }
-  };
-  
-  const handleClearMemory = () => {
-      if (confirm('¿Estás seguro de que quieres borrar todos los datos guardados?\nEsto eliminará tu lista personalizada, favoritos, API Key y configuración.')) {
-          localStorage.clear();
-          setAssets(DEFAULT_ASSETS);
-          setFavorites([]);
-          setCurrency('USD');
-          setMarketMode('CRYPTO');
-          setApiKey('');
-          alert('Memoria vaciada. Se han restaurado los valores por defecto.');
       }
   };
 
@@ -562,7 +549,6 @@ export default function App() {
                 assetCount={visibleAssets.length} 
                 userIp={userIp} 
                 onManageCookies={handleManageCookies} 
-                onClearMemory={handleClearMemory}
                 onManageApiKey={() => setShowAjustes(true)}
                 hasApiKey={!!apiKey}
             />

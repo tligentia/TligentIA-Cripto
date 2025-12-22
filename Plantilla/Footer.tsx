@@ -1,17 +1,16 @@
 import React from 'react';
-import { Trash2, Settings, AlertTriangle } from 'lucide-react';
-import { APP_VERSION, ALLOWED_IPS, getAllowedIps } from './Parameters';
+import { Settings, AlertTriangle } from 'lucide-react';
+import { APP_VERSION, getAllowedIps } from './Parameters';
 
 interface FooterProps {
     assetCount: number;
     userIp: string | null;
     onManageCookies: () => void;
-    onClearMemory: () => void;
     onManageApiKey: () => void;
     hasApiKey: boolean;
 }
 
-const Footer: React.FC<FooterProps> = ({ userIp, onManageCookies, onClearMemory, onManageApiKey, hasApiKey }) => {
+const Footer: React.FC<FooterProps> = ({ userIp, onManageCookies, onManageApiKey, hasApiKey }) => {
     const allowed = getAllowedIps();
     const isDevIp = userIp ? allowed.includes(userIp) : false;
 
@@ -59,15 +58,6 @@ const Footer: React.FC<FooterProps> = ({ userIp, onManageCookies, onClearMemory,
                         <span className="uppercase">Ajustes / API Key {hasApiKey && '✓'}</span>
                     </button>
                     
-                    <button 
-                        type="button" 
-                        onClick={onClearMemory} 
-                        className="hover:text-red-700 transition flex items-center gap-1 uppercase"
-                        title="Borrar datos y restaurar"
-                    >
-                        <Trash2 size={12} /> Reset
-                    </button>
-
                     <span className="text-gray-200 select-none">/</span>
                     
                     <div className="flex gap-3 text-gray-900">
