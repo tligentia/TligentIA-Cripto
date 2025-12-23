@@ -1,0 +1,80 @@
+1,Wallets,MetaMask,https://metamask.io,"Ethereum, Arbitrum, Base, Polygon, Binance Smart Chain, Optimism",Billetera de custodia propia (hot wallet) para gestionar activos e interactuar con aplicaciones descentralizadas en redes EVM.
+1,Wallets,Rabby Wallet,https://rabby.io,"Ethereum, Base, Arbitrum, Polygon, Binance Smart Chain","Billetera optimizada para DeFi con seguridad mejorada, visualización multired y desglose detallado de protocolos y transacciones."
+1,Wallets,Phantom Wallet,https://phantom.app,"Solana, Ethereum, Polygon","Billetera digital de autocustodia para gestionar activos, NFTs y conectarse a aplicaciones descentralizadas, principalmente en Solana."
+1,Wallets,Trezor,https://trezor.io,"Bitcoin, Solana, Ethereum, Multichain",Billetera de hardware (cold wallet) para la custodia segura de claves privadas fuera de línea.
+1,Wallets,Ledger,https://www.ledger.com,Multired,Dispositivo físico para el almacenamiento seguro de criptomonedas y protección de claves privadas.
+1,Wallets,Trust Wallet,https://trustwallet.com/,Multired,"Billetera con biometría digital de autocustodia para gestionar activos, NFTs y conectarse a aplicaciones descentralizadas."
+2,DEXs,Uniswap,https://app.uniswap.org,"Ethereum, Base, Binance Smart Chain, Polygon, Arbitrum, Solana, Optimism",Intercambio de tokens y creación de pools de liquidez concentrada (V3/V4) para generar comisiones por intercambio.
+2,DEXs,Meteora,https://www.meteora.ag,Solana,Creador de mercado de liquidez dinámica (DLMM) que permite concentrar liquidez en bins y maximizar comisiones mediante estrategias dinámicas.
+2,DEXs,Orca,https://www.orca.so,Solana,Protocolo de intercambio y pools de liquidez concentrada (Whirlpools) eficiente en la red Solana.
+2,DEXs,Raydium,https://raydium.io,Solana,"Protocolo de intercambio, provisión de liquidez y farming de tokens en el ecosistema Solana."
+2,DEXs,Hyperliquid,https://hyperliquid.xyz,Hyperliquid L1,Intercambio descentralizado especializado en futuros perpetuos con libro de órdenes.
+2,DEXs,Curve,https://curve.fi,"Ethereum, Polygon, Arbitrum",Exchange descentralizado especializado en el intercambio eficiente de monedas estables.
+2,DEXs,QuickSwap,https://quickswap.exchange,Polygon,Exchange descentralizado nativo de la red Polygon basado en el modelo AMM.
+2,DEXs,Asterdex,https://www.asterdex.com,Not in source,Protocolo para el intercambio de activos y trading descentralizado.
+3,Visualizador,DeBank,https://debank.com,"Multichain (Ethereum, Base, Binance Smart Chain, etc.)","Seguimiento de carteras on-chain para visualizar saldos, deudas, historial de transacciones y posiciones en protocolos DeFi."
+3,Visualizador,DeFiLlama,https://defillama.com,Multichain,"Análisis de datos on-chain, valor total bloqueado (TVL), volúmenes, comisiones, rendimientos y matrices de correlación."
+3,Visualizador,Coingecko,https://www.coingecko.com,Multichain,"Portal informativo de mercado que proporciona cotizaciones, capitalización, datos técnicos de tokens y enlaces oficiales."
+3,Visualizador,DexScreener,https://dexscreener.com,Multichain,"Gráficos en tiempo real, seguimiento de transacciones y análisis de liquidez en exchanges descentralizados."
+3,Visualizador,CoinMarketCap,https://coinmarketcap.com,Multired,"Agregador de datos de mercado, seguimiento de precios, capitalización y estadísticas de criptoactivos."
+3,Visualizador,GeckoTerminal,https://www.geckoterminal.com/es,Multi-red,Herramienta de gráficos y datos en tiempo real para pares de trading en DEXs.
+3,Visualizador,TradingView,https://www.tradingview.com,N/A,Herramienta de análisis técnico profesional para graficar precios de múltiples mercados financieros.
+3,Visualizador,USDC (Circle),https://www.circle.com/en/usdc,"Ethereum, Solana, Polygon, Base, Arbitrum",Stablecoin respaldada 1:1 por dólares estadounidenses en reservas auditadas.
+3,Visualizador,USDT (Tether),https://tether.to/es/,"Ethereum, Tron, Solana, Celo",Stablecoin vinculada al dólar utilizada para liquidez y transferencias rápidas.
+3,Visualizador,The Graph (GRT),https://thegraph.com,Multichain,Protocolo descentralizado para indexar y consultar datos de diversas blockchains.
+3,Visualizador,Chainlink,https://chain.link,Multichain,Red de oráculos descentralizados que suministra datos externos a contratos inteligentes.
+3,Visualizador,Poolfish,https://poolfish.xyz,Todas,Herramienta de búsqueda y calculadora para estimar comisiones y rangos en pools de liquidez.
+3,Visualizador,Artemis,https://www.artemis.xyz,Multichain,Plataforma de análisis de métricas on-chain como actividad de usuarios y stablecoins.
+3,Visualizador,Step Finance,https://app.step.finance,Solana,Panel de control para visualizar y gestionar todas las posiciones DeFi en Solana.
+3,Visualizador,SonarWatch,https://sonar.watch,Multicadena,Herramienta de seguimiento de carteras para múltiples protocolos y redes DeFi.
+3,Visualizador,ProRealTime,https://www.prorealtime.com,TradFi,Plataforma de análisis técnico y gráfico para activos financieros tradicionales.
+3,Visualizador,Proton Mail,https://account.proton.me/mail,N/A,Servicio de correo electrónico seguro utilizado para la gestión de comunicaciones de activos.
+4,Agregadores,Jupiter,https://jup.ag,Solana,"Agregador de swaps, órdenes limitadas, DCA, trading de perpetuos, launchpad y gestión de gobernanza (LFG) en Solana."
+4,Agregadores,Revert Finance,https://revert.finance,"Ethereum, Polygon, Arbitrum, Base, Optimism","Gestión y análisis de posiciones de liquidez con funciones de autocompound, auto-rebalanceo, préstamos y apalancamiento."
+4,Agregadores,Crystal,https://crystal.app,"Ethereum, Base, Polygon, Arbitrum, Binance Smart Chain","Gestión avanzada de pools de liquidez con funciones de autocompound, autorebalance, autoexit y optimización de rangos."
+4,Agregadores,Jumper Exchange,https://jumper.exchange,Multichain (EVM),Agregador de puentes (bridges) y swaps para intercambiar y transferir activos entre diferentes redes blockchain.
+4,Agregadores,Enzyme Finance,https://enzyme.finance,"Ethereum, Polygon, Arbitrum",Infraestructura para la gestión de activos y creación de fondos de inversión on-chain con transparencia total.
+4,Agregadores,Ethena,https://www.ethena.fi,"Ethereum, Arbitrum, Optimism, Base",Protocolo de dólar sintético (USDe) que genera rendimientos mediante estrategias de cobertura delta-neutral.
+4,Agregadores,Krystal Finance,https://defi.krystal.app,Multi-red,"Plataforma para intercambio de tokens, gestión de carteras y rebalanceo de pools de liquidez."
+4,Agregadores,Symmetry,https://app.symmetry.fi,Solana,Plataforma de gestión de carteras y creación de cestas de tokens (índices) on-chain.
+4,Agregadores,Aperture Finance,https://app.aperture.finance,Múltiples,"Automatización de estrategias, rebalanceo y reinversión de comisiones en pools de liquidez."
+5,Lending,Aave,https://aave.com,"Ethereum, Base, Polygon, Arbitrum, Avalanche, Solana, Optimism","Protocolo de mercado de deuda para depositar activos, generar intereses, solicitar créditos colateralizados y realizar estrategias de apalancamiento."
+5,Lending,Marinade Finance,https://app.marinade.finance,Solana,Protocolo de staking líquido que ofrece mSOL a cambio de SOL para maximizar la rentabilidad por validación.
+5,Lending,Pendle Finance,https://app.pendle.finance,"Ethereum, Arbitrum, Mantle",Protocolo para el comercio de rendimientos futuros mediante la tokenización separada del principal y el interés.
+5,Lending,Ether.fi,https://www.ether.fi,Ethereum,Protocolo de restaking líquido que permite obtener recompensas de validación manteniendo el control de las claves.
+5,Lending,Morpho Blue,https://app.morpho.org,"Ethereum, Base",Protocolo de préstamos eficiente que permite mercados aislados con gestión de riesgo personalizada.
+5,Lending,Kamino,https://app.kamino.finance,Solana,"Protocolo unificado de préstamos, provisión de liquidez y gestión de bóvedas en Solana."
+5,Lending,Marginfi,https://app.marginfi.com,Solana,Protocolo de préstamos descentralizado con un enfoque específico en la gestión de riesgos en Solana.
+5,Lending,Compound,https://compound.finance,Ethereum,Protocolo de préstamos algorítmico que permite ganar intereses sobre depósitos de criptomonedas.
+5,Lending,Lombard Finance,https://www.lombard.finance,"Bitcoin, Ethereum",Protocolo que permite realizar staking líquido de Bitcoin en el ecosistema DeFi.
+5,Lending,Maker / Oasis,https://oasis.app,Ethereum,Sistema de emisión de la stablecoin DAI mediante colateralización de activos.
+6,On-Chain,Lido,https://lido.fi,Ethereum,Protocolo de Liquid Staking que permite obtener recompensas de validación manteniendo la liquidez mediante tokens como stETH.
+6,On-Chain,Bitcoin,https://bitcoin.org/es/,Bitcoin (Nativa),"Activo digital descentralizado utilizado como reserva de valor, inversión a largo plazo y acumulación de valor."
+6,On-Chain,CoinTracking,https://cointracking.info,Multichain,"Software de contabilidad y consultoría fiscal para criptoactivos, generando informes de pérdidas, ganancias e impuestos."
+6,On-Chain,Ethereum,https://ethereum.org/es/,Ethereum,Plataforma de contratos inteligentes y ecosistema principal para aplicaciones descentralizadas (dApps).
+6,On-Chain,Solana,https://solana.com/es,Solana,Blockchain de alta velocidad y bajo coste para aplicaciones descentralizadas y pagos.
+6,On-Chain,EigenLayer,https://app.eigenlayer.xyz,Ethereum,Protocolo de restaking que utiliza tokens de staking líquido para brindar seguridad a otros servicios.
+6,On-Chain,Renzo Protocol,https://www.renzoprotocol.com,Ethereum,Gestor de estrategia y protocolo de restaking líquido para el ecosistema EigenLayer.
+6,On-Chain,OpenSea,https://opensea.io,"Ethereum, Polygon, Flow","Mercado descentralizado para la compra, venta y creación de NFTs."
+6,On-Chain,Zcash (ZEC),https://z.cash/es/,Zcash,Criptomoneda enfocada en la privacidad mediante pruebas de conocimiento cero.
+6,On-Chain,Arweave,https://www.arweave.org,Propia,Red de almacenamiento de datos permanente y descentralizada.
+6,On-Chain,Pacifica,https://app.pacifica.fi,Not in source,Aplicación descentralizada para estrategias financieras on-chain.
+7,TradFi,Bitget,https://www.bitget.com,Multired,"Exchange centralizado (CEX) para compra de cripto con fiat, trading spot, futuros y servicios de custodia."
+7,TradFi,Binance,https://www.binance.com,Multired,"Exchange centralizado global para el intercambio, depósito, custodia y servicios financieros de criptoactivos."
+7,TradFi,Coinbase,https://www.coinbase.com,"Base, Ethereum",Exchange centralizado y emisor de activos como cbBTC y la stablecoin USDC.
+7,TradFi,Bitso,https://bitso.com,Múltiples,Plataforma de intercambio de criptomonedas con enfoque en Latinoamérica.
+7,TradFi,Rain Cards,https://www.raincards.xyz,Visa Network,Infraestructura que permite liquidar gastos con criptoactivos en tiempo real usando tarjetas.
+8,Fiscalidad,CoinTracking,https://cointracking.info/,"Multicadena (Exchanges, Billeteras y Blockchains)","Seguimiento de monedas, NFT y DeFi; importación vía API y CSV; cálculo de ganancias/pérdidas realizadas y generación de informes fiscales."
+8,Fiscalidad,Koinly,https://koinly.io/,Multicadena (más de 900+ plataformas),"Cálculo de impuestos para criptomonedas, seguimiento de portafolio gratuito, importación automática de trades y generación de informes para Hacienda (España)."
+8,Fiscalidad,CoinLedger,https://coinledger.io/,Multicadena (800+ integraciones),Seguimiento de activos en múltiples plataformas; cálculo automático de ganancias y pérdidas para informes fiscales.
+9,Rastreador,Zeronion (Zerion),https://zerion.io/,Ethereum y otras,"Visualización amigable de tokens y protocolos; seguimiento de rendimientos, historial de transacciones, compra/venta directa y gestión de pools de liquidez."
+9,Rastreador,Zapper.Fi,https://zapper.fi/,Ethereum,"Interfaz para gestión de activos DeFi y NFT; permite visualizar portafolio web3, métricas de usuarios únicos y estadísticas de contratos inteligentes."
+9,Rastreador,DeBank,https://debank.com/,Multicadena (Protocolos DeFi),Visualización clara de inversiones en protocolos DeFi; gestión y evaluación de tenencias descentralizadas.
+9,Rastreador ,DeFi Saver,https://defisaver.com/,Ethereum,"Gestión unificada de protocolos DeFi (Maker, Compound, Aave); permite cambiar colaterales y automatizar estrategias de ahorro."
+9,Rastreador,APY.vision,https://apy.vision/,Protocolos DeFi (Liquidity Pools),"Seguimiento especializado para proveedores de liquidez; cálculo de impermanent loss, costos de gas y ganancias netas."
+9,Rastreador,CoinStats,https://coinstats.app/,"Multicadena (10 cadenas, más de 300 carteras)","Gestión de cripto, DeFi y NFT; datos de precios en tiempo real, análisis de ganancias/pérdidas y generación de informes de impuestos cripto."
+10,Explorador,Blockchair,https://blockchair.com/,Multicadena,"Motor de búsqueda que integra múltiples blockchains; visualización de datos, comparación de cadenas y rastreo de portafolio anónimo."
+10,Explorador,Blockchain.com,https://www.blockchain.com/explorer,Bitcoin y otras,"Búsqueda de detalles de transacciones, exploración de bloques y examen de actividades de billeteras con interfaz amigable."
+10,Explorador,Blockstream.info,https://blockstream.info/,"Bitcoin (Mainnet, Testnet y Liquid)",Explorador de código abierto centrado en la privacidad; compatible con navegación vía Tor sin rastreo de usuarios.
+10,Explorador,EtherScan,https://etherscan.io,Ethereum,"Explorador de bloques para verificar detalles de transacciones, saldos y ejecución de contratos inteligentes en Ethereum."
+10,Explorador,deBridge,https://app.debridge.finance,Multicadena,Protocolo de puente para trasladar liquidez y mensajes entre diferentes redes blockchain.
