@@ -217,7 +217,10 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
   const formatPriceFull = (val: number) => val.toLocaleString('es-ES', { style: 'currency', currency: curConf.code, minimumFractionDigits: digits, maximumFractionDigits: digits });
 
   const cardContent = (isLarge: boolean) => (
-    <div className={`${isLarge ? 'p-10 md:p-16' : 'p-5'} rounded-lg border ${asset.isFavorite ? 'border-gray-900 ring-1 ring-gray-100' : 'border-gray-200'} bg-white shadow-sm transition-all relative overflow-hidden h-full flex flex-col`}>
+    <div 
+      id={`asset-card-${asset.symbol}`}
+      className={`${isLarge ? 'p-10 md:p-16' : 'p-5'} rounded-lg border ${asset.isFavorite ? 'border-gray-900 ring-1 ring-gray-100' : 'border-gray-200'} bg-white shadow-sm transition-all relative overflow-hidden h-full flex flex-col scroll-mt-32`}
+    >
       <div className={`flex justify-between items-start ${isLarge ? 'mb-10' : 'mb-3'}`}>
         <div className="cursor-pointer group" onClick={() => setIsZoomed(isLarge ? false : true)}>
           <div className="flex items-center gap-2">

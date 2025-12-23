@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart3, Clock, Database, Sparkles, RefreshCw, Search, Plus, Loader2, AlertCircle, Coins, Bitcoin, Building2, Activity, Zap, BrainCircuit, Info, LayoutGrid } from 'lucide-react';
 import { Asset, CurrencyCode, AssetType } from './types';
@@ -14,6 +15,7 @@ import { Ajustes } from './Plantilla/Ajustes';
 import CryptoCorrelationPro from './components/CryptoCorrelationPro';
 import AiSuggestionModal from './components/AiSuggestionModal';
 import GeneralDashboard from './components/GeneralDashboard';
+import Guia from './components/Guia';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,7 +24,8 @@ export default function App() {
   const [showAjustes, setShowAjustes] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   
-  const [view, setView] = useState<'overview' | 'dashboard' | 'correlation'>('overview');
+  const [view, setView] = useState<'overview' | 'dashboard' | 'correlation' | 'guia'>('overview');
+  const [scrollToSymbol, setScrollToSymbol] = useState<string | null>(null);
   
   // -- AUTO LOGIN BY IP --
   useEffect(() => {
@@ -104,6 +107,21 @@ export default function App() {
       };
       getRates();
   }, [refreshTrigger]);
+
+  // -- SCROLL TO ASSET HANDLER --
+  useEffect(() => {
+    if (view === 'dashboard' && scrollToSymbol) {
+        // Wait for render
+        const timer = setTimeout(() => {
+            const element = document.getElementById(`asset-card-${scrollToSymbol}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setScrollToSymbol(null); // Clear target after scroll
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [view, scrollToSymbol]);
 
   const handleRefreshAll = () => { 
     setLastUpdate(new Date()); 
@@ -268,7 +286,7 @@ export default function App() {
   const handleWidgetNavigation = (asset: Asset) => {
     setMarketMode(asset.type === 'STOCK' ? 'STOCK' : 'CRYPTO');
     setView('dashboard');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setScrollToSymbol(asset.symbol);
   };
 
   return (
@@ -320,7 +338,7 @@ export default function App() {
 
                  <div className="flex gap-3 items-center">
                     
-                    {view === 'dashboard' && (
+                    {(view === 'dashboard' || view === 'overview') && (
                         <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm animate-in fade-in zoom-in-95 duration-200">
                             <button 
                                 onClick={() => setMarketMode('CRYPTO')}
@@ -361,6 +379,13 @@ export default function App() {
                             title="Análisis de Correlación"
                         >
                             <Activity size={16} />
+                        </button>
+                        <button 
+                            onClick={() => setView('guia')}
+                            className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'guia' ? 'bg-white shadow text-red-700 font-bold' : 'text-gray-400 hover:text-gray-600'}`}
+                            title="GuIA Masterclass"
+                        >
+                            <Sparkles size={16} />
                         </button>
                     </div>
 
@@ -503,7 +528,7 @@ export default function App() {
                 </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 print:grid-cols-2 print:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 print:grid-cols-2 print:gap-4 items-start">
               {visibleAssets.map((asset, index) => {
                   return (
                     <AssetCard 
@@ -542,6 +567,10 @@ export default function App() {
             rate={rates[currency]}
             availableAssets={assets}
           />
+        </div>
+
+        <div className={view === 'guia' ? 'block' : 'hidden'}>
+          <Guia />
         </div>
 
         <div className="print:hidden mt-12">

@@ -1,7 +1,8 @@
+
 import { TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react';
 import { Asset, StageConfig, CurrencyConfig, CurrencyCode } from '../types';
 
-export const APP_VERSION = 'v25.12Y';
+export const APP_VERSION = 'v25.12AA';
 
 export const ALLOWED_IPS = [
   '79.112.85.173',
