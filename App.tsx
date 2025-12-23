@@ -311,7 +311,7 @@ export default function App() {
         </header>
 
         <div className={view === 'overview' ? 'block' : 'hidden'}>
-            <GeneralDashboard userAssets={assets} currency={currency} rate={rates[currency]} onAddClick={navigateToAnalysis} onDelete={handleDelete} onToggleFavorite={handleToggleFavorite} onMove={moveAsset} onWidgetClick={handleWidgetNavigation} refreshTrigger={refreshTrigger} />
+            <GeneralDashboard userAssets={visibleAssets} currency={currency} rate={rates[currency]} onAddClick={navigateToAnalysis} onDelete={handleDelete} onToggleFavorite={handleToggleFavorite} onMove={moveAsset} onWidgetClick={handleWidgetNavigation} refreshTrigger={refreshTrigger} />
         </div>
         
         <div className={view === 'dashboard' ? 'block' : 'hidden'}>
