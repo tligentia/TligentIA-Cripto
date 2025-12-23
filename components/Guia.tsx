@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-/* Added missing icons: ExternalLink, BrainCircuit, Zap */
 import { 
   Sparkles, MessageSquare, Database, ChevronRight, Search, 
   Repeat, Eye, EyeOff, Plus, Trash2, Edit2, FileText, Play,
@@ -8,6 +7,163 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { INITIAL_TOOLS, INITIAL_PLATFORMS, MODAL_CONTENT, GEMINI_LABS } from '../constants';
+
+// --- SUB-COMPONENTES (EXTRACCION PARA EVITAR PERDIDA DE FOCO) ---
+
+interface ResourceCardProps {
+  item: any;
+  isTool: boolean;
+  editingId: string | null;
+  setEditingId: (id: string | null) => void;
+  removeResourceLink: (categoryId: string, linkName: string, isTool: boolean) => void;
+  addResourceLink: (categoryId: string, isTool: boolean) => void;
+  newLink: { name: string; url: string };
+  setNewLink: (link: { name: string; url: string }) => void;
+}
+
+const ResourceCard: React.FC<ResourceCardProps> = ({ 
+  item, 
+  isTool, 
+  editingId, 
+  setEditingId, 
+  removeResourceLink, 
+  addResourceLink, 
+  newLink, 
+  setNewLink 
+}) => (
+  <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:border-gray-300 hover:shadow-md transition-all flex flex-col group h-full relative">
+    <div className="flex gap-6 items-start mb-5">
+      <div className="text-4xl grayscale group-hover:grayscale-0 transition-all flex-shrink-0 bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-inner">
+        {item.emoji}
+      </div>
+      <div className="flex-1 min-w-0 pt-1">
+        <div className="flex justify-between items-center mb-1">
+          <h4 className="font-black text-gray-900 uppercase text-sm tracking-tight truncate leading-none">
+            {item.title}
+          </h4>
+          <button 
+            onClick={() => setEditingId(editingId === item.id ? null : item.id)} 
+            className={`p-2 rounded-lg transition-colors ${editingId === item.id ? 'text-red-700 bg-red-50' : 'text-gray-400 hover:text-red-700 hover:bg-gray-50'}`}
+          >
+            <Edit2 size={16} />
+          </button>
+        </div>
+        <p className="text-gray-500 text-[11px] font-medium leading-relaxed mt-1 pr-4">
+          {item.desc}
+        </p>
+      </div>
+    </div>
+
+    <div className="flex flex-wrap gap-2 mb-2">
+      {item.links.map((link: any) => (
+        <div key={link.name} className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl group/link hover:border-red-200 hover:bg-red-50 transition-all">
+          <a 
+            href={link.url} 
+            target="_blank" 
+            rel="noreferrer" 
+            className="text-[10px] font-black text-gray-800 uppercase tracking-wide hover:text-red-700 transition-colors"
+          >
+            {link.name}
+          </a>
+          {editingId === item.id && (
+            <button 
+              onClick={() => removeResourceLink(item.id, link.name, isTool)} 
+              className="text-gray-400 hover:text-red-700 transition-colors ml-1"
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
+          <ExternalLink size={10} className="text-gray-300 group-hover/link:text-red-400" />
+        </div>
+      ))}
+    </div>
+
+    {editingId === item.id && (
+      <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Nombre</label>
+            <input 
+              type="text" 
+              placeholder="Ej: MetaMask" 
+              value={newLink.name} 
+              onChange={(e) => setNewLink({ ...newLink, name: e.target.value })} 
+              className="w-full text-[11px] font-bold p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-700/20 focus:border-red-700 transition-all" 
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">URL</label>
+            <input 
+              type="text" 
+              placeholder="https://..." 
+              value={newLink.url} 
+              onChange={(e) => setNewLink({ ...newLink, url: e.target.value })} 
+              className="w-full text-[11px] font-bold p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-700/20 focus:border-red-700 transition-all" 
+            />
+          </div>
+        </div>
+        <button 
+          onClick={() => addResourceLink(item.id, isTool)} 
+          className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-black hover:shadow-lg transition-all active:scale-95"
+        >
+          <Plus size={14} /> Añadir
+        </button>
+      </div>
+    )}
+  </div>
+);
+
+interface ResultBoxProps {
+  id: string;
+  label: string;
+  res: { loading: boolean; text: string } | undefined;
+  isExpanded: boolean;
+  onToggleExpand: (id: string) => void;
+  onAction?: () => void;
+}
+
+const ResultBox: React.FC<ResultBoxProps> = ({ id, label, res, isExpanded, onToggleExpand, onAction }) => {
+  if (!res && id.startsWith('quadrant-')) {
+      return (
+          <button 
+              onClick={onAction}
+              className="w-full text-left bg-gray-50 hover:bg-red-50 rounded-2xl border border-dashed border-gray-300 hover:border-red-300 transition-all group p-5 flex items-center justify-between"
+          >
+              <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm group-hover:bg-red-700 group-hover:text-white transition-colors">
+                      <Play size={12} fill="currentColor" />
+                  </div>
+                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest group-hover:text-red-700">Aprender más</span>
+              </div>
+              <ChevronRight size={14} className="text-gray-300 group-hover:text-red-700 group-hover:translate-x-1 transition-all" />
+          </button>
+      );
+  }
+
+  if (!res) return null;
+
+  return (
+    <div className="w-full text-left bg-white rounded-2xl border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-500 overflow-hidden shadow-sm">
+      <div className="flex items-center justify-between px-6 py-3 bg-gray-50/80 border-b border-gray-200">
+        <div className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+          <MessageSquare size={14} className="text-red-700" /> {label}
+        </div>
+        <button onClick={() => onToggleExpand(id)} className="text-[9px] font-black text-gray-400 uppercase tracking-widest hover:text-red-700 flex items-center gap-1">
+          {isExpanded ? <><EyeOff size={10} /> Resumir</> : <><Eye size={10} /> Ver Todo</>}
+        </button>
+      </div>
+      <div className="p-6">
+        {res.loading ? (
+          <div className="py-10 flex flex-col items-center justify-center"><Repeat size={24} className="text-gray-300 animate-spin mb-3" /><p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Sintetizando...</p></div>
+        ) : (
+          <div className={`text-gray-900 text-[13px] leading-relaxed whitespace-pre-wrap font-sans font-semibold transition-all duration-300 ${!isExpanded ? 'line-clamp-4 opacity-80' : 'opacity-100'}`}>{res.text}</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- COMPONENTE PRINCIPAL ---
 
 const Guia: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'herramientas' | 'ia' | 'teoria'>('herramientas');
@@ -53,7 +209,6 @@ const Guia: React.FC = () => {
       finalPrompt = finalPrompt.replace(`{${input.id}}`, val);
     });
     try {
-      /* Create a new GoogleGenAI instance right before making an API call to ensure it uses up-to-date config */
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: finalPrompt, config: { temperature: 0.7 } });
       setAiResults(prev => ({ ...prev, [labId]: { loading: false, text: response.text || 'Sin respuesta' } }));
@@ -61,132 +216,6 @@ const Guia: React.FC = () => {
     } catch (e) {
       setAiResults(prev => ({ ...prev, [labId]: { loading: false, text: 'Error en la conexión.' } }));
     }
-  };
-
-  const ResourceCard: React.FC<{ item: any, isTool: boolean }> = ({ item, isTool }) => (
-    <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:border-gray-300 hover:shadow-md transition-all flex flex-col group h-full relative">
-      <div className="flex gap-6 items-start mb-5">
-        <div className="text-4xl grayscale group-hover:grayscale-0 transition-all flex-shrink-0 bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-inner">
-          {item.emoji}
-        </div>
-        <div className="flex-1 min-w-0 pt-1">
-          <div className="flex justify-between items-center mb-1">
-            <h4 className="font-black text-gray-900 uppercase text-sm tracking-tight truncate leading-none">
-              {item.title}
-            </h4>
-            <button 
-              onClick={() => setEditingId(editingId === item.id ? null : item.id)} 
-              className={`p-2 rounded-lg transition-colors ${editingId === item.id ? 'text-red-700 bg-red-50' : 'text-gray-400 hover:text-red-700 hover:bg-gray-50'}`}
-            >
-              <Edit2 size={16} />
-            </button>
-          </div>
-          <p className="text-gray-500 text-[11px] font-medium leading-relaxed mt-1 pr-4">
-            {item.desc}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2 mb-2">
-        {item.links.map((link: any) => (
-          <div key={link.name} className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl group/link hover:border-red-200 hover:bg-red-50 transition-all">
-            <a 
-              href={link.url} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="text-[10px] font-black text-gray-800 uppercase tracking-wide hover:text-red-700 transition-colors"
-            >
-              {link.name}
-            </a>
-            {editingId === item.id && (
-              <button 
-                onClick={() => removeResourceLink(item.id, link.name, isTool)} 
-                className="text-gray-400 hover:text-red-700 transition-colors ml-1"
-              >
-                <Trash2 size={12} />
-              </button>
-            )}
-            <ExternalLink size={10} className="text-gray-300 group-hover/link:text-red-400" />
-          </div>
-        ))}
-      </div>
-
-      {editingId === item.id && (
-        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Nombre</label>
-              <input 
-                type="text" 
-                placeholder="Ej: MetaMask" 
-                value={newLink.name} 
-                onChange={(e) => setNewLink({ ...newLink, name: e.target.value })} 
-                className="w-full text-[11px] font-bold p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-700/20 focus:border-red-700 transition-all" 
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">URL</label>
-              <input 
-                type="text" 
-                placeholder="https://..." 
-                value={newLink.url} 
-                onChange={(e) => setNewLink({ ...newLink, url: e.target.value })} 
-                className="w-full text-[11px] font-bold p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-700/20 focus:border-red-700 transition-all" 
-              />
-            </div>
-          </div>
-          <button 
-            onClick={() => addResourceLink(item.id, isTool)} 
-            className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-black hover:shadow-lg transition-all active:scale-95"
-          >
-            <Plus size={14} /> Añadir
-          </button>
-        </div>
-      )}
-    </div>
-  );
-
-  const ResultBox = ({ id, label, onAction }: { id: string, label: string, onAction?: () => void }) => {
-    const res = aiResults[id];
-
-    if (!res && id.startsWith('quadrant-')) {
-        return (
-            <button 
-                onClick={onAction}
-                className="w-full text-left bg-gray-50 hover:bg-red-50 rounded-2xl border border-dashed border-gray-300 hover:border-red-300 transition-all group p-5 flex items-center justify-between"
-            >
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white rounded-lg shadow-sm group-hover:bg-red-700 group-hover:text-white transition-colors">
-                        <Play size={12} fill="currentColor" />
-                    </div>
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest group-hover:text-red-700">Aprender más</span>
-                </div>
-                <ChevronRight size={14} className="text-gray-300 group-hover:text-red-700 group-hover:translate-x-1 transition-all" />
-            </button>
-        );
-    }
-
-    if (!res) return null;
-
-    return (
-      <div className="w-full text-left bg-white rounded-2xl border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-500 overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-50/80 border-b border-gray-200">
-          <div className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-            <MessageSquare size={14} className="text-red-700" /> {label}
-          </div>
-          <button onClick={() => toggleExpand(id)} className="text-[9px] font-black text-gray-400 uppercase tracking-widest hover:text-red-700 flex items-center gap-1">
-            {expandedResults[id] ? <><EyeOff size={10} /> Resumir</> : <><Eye size={10} /> Ver Todo</>}
-          </button>
-        </div>
-        <div className="p-6">
-          {res.loading ? (
-            <div className="py-10 flex flex-col items-center justify-center"><Repeat size={24} className="text-gray-300 animate-spin mb-3" /><p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Sintetizando...</p></div>
-          ) : (
-            <div className={`text-gray-900 text-[13px] leading-relaxed whitespace-pre-wrap font-sans font-semibold transition-all duration-300 ${!expandedResults[id] ? 'line-clamp-4 opacity-80' : 'opacity-100'}`}>{res.text}</div>
-          )}
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -216,7 +245,19 @@ const Guia: React.FC = () => {
               <Zap size={14} className="text-red-700" /> DeFi Essentials
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              {customTools.map((tool: any) => <ResourceCard key={tool.id} item={tool} isTool={true} />)}
+              {customTools.map((tool: any) => (
+                <ResourceCard 
+                  key={tool.id} 
+                  item={tool} 
+                  isTool={true} 
+                  editingId={editingId}
+                  setEditingId={setEditingId}
+                  removeResourceLink={removeResourceLink}
+                  addResourceLink={addResourceLink}
+                  newLink={newLink}
+                  setNewLink={setNewLink}
+                />
+              ))}
             </div>
           </div>
           <div>
@@ -224,7 +265,19 @@ const Guia: React.FC = () => {
               <Search size={14} className="text-red-700" /> Inteligencia de Mercado
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              {customPlatforms.map((plat: any) => <ResourceCard key={plat.id} item={plat} isTool={false} />)}
+              {customPlatforms.map((plat: any) => (
+                <ResourceCard 
+                  key={plat.id} 
+                  item={plat} 
+                  isTool={false}
+                  editingId={editingId}
+                  setEditingId={setEditingId}
+                  removeResourceLink={removeResourceLink}
+                  addResourceLink={addResourceLink}
+                  newLink={newLink}
+                  setNewLink={setNewLink}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -253,7 +306,13 @@ const Guia: React.FC = () => {
                   {aiResults[lab.id]?.loading ? <Repeat className="animate-spin" size={18} /> : <Sparkles size={18} />} {lab.buttonText}
                 </button>
               </div>
-              <ResultBox id={lab.id} label="Resultado" />
+              <ResultBox 
+                id={lab.id} 
+                label="Resultado" 
+                res={aiResults[lab.id]} 
+                isExpanded={!!expandedResults[lab.id]}
+                onToggleExpand={toggleExpand}
+              />
             </div>
           ))}
         </div>
@@ -274,6 +333,9 @@ const Guia: React.FC = () => {
                 <ResultBox 
                     id={`quadrant-${content.id}`} 
                     label="Resultado" 
+                    res={aiResults[`quadrant-${content.id}`]}
+                    isExpanded={!!expandedResults[`quadrant-${content.id}`]}
+                    onToggleExpand={toggleExpand}
                     onAction={() => handleAiAction(`quadrant-${content.id}`, content.prompt)}
                 />
               </div>
