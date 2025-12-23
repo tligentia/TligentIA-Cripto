@@ -1,5 +1,5 @@
 
-export const APP_VERSION = 'v25.12AC';
+export const APP_VERSION = 'v25.12AD';
 
 import { 
   TrendingUp, 
