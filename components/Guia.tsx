@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Sparkles, MessageSquare, ChevronRight, Repeat, Eye, EyeOff, 
   Plus, Trash2, Edit2, FileText, Play, ExternalLink, BrainCircuit, 
-  Zap, Heart, Globe, Save, X
+  Zap, Heart, Globe, Save, X, ListOrdered
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { MODAL_CONTENT, GEMINI_LABS } from '../constants';
@@ -21,6 +21,7 @@ interface ResourceLink {
 interface Category {
   id: string;
   title: string;
+  order: number;
   emoji: string;
   desc: string;
   links: ResourceLink[];
@@ -28,6 +29,7 @@ interface Category {
 
 // --- CONSTANTS ---
 
+// Diccionarios opcionales para mejorar la visualización de grupos conocidos del CSV
 const CATEGORY_ICONS: Record<string, string> = {
   'Wallets': '🔑',
   'DEXs': '🔄',
@@ -36,6 +38,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Data Agg': '🪙',
   'On-Chain': '🔗',
   'Explorers': '🔎',
+  'Explorador': '🔎',
   'Trackers': '🛰️',
   'TradFi': '🏛️',
   'Visualizador': '🖥️',
@@ -44,13 +47,14 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const CATEGORY_DESCS: Record<string, string> = {
-  'Wallets': 'Autocustodia y gestión de claves privadas.',
-  'DEXs': 'Intercambio de activos sin intermediarios.',
-  'Lending': 'Préstamos y generación de rendimiento.',
-  'Agregadores': 'Optimización de rutas y swaps.',
-  'Data Agg': 'Estadísticas y precios en tiempo real.',
-  'On-Chain': 'Análisis de bloques y flujos de red.',
-  'Explorers': 'Verificación de contratos y transacciones.'
+  'Wallets': 'Gestión de claves y custodia de activos digitales.',
+  'DEXs': 'Intercambios descentralizados sin intermediarios.',
+  'Lending': 'Protocolos de préstamo y generación de interés.',
+  'Agregadores': 'Optimización de rutas y liquidez multired.',
+  'Visualizador': 'Análisis de mercado y monitorización de carteras.',
+  'Fiscalidad': 'Control de impuestos y reporting tributario.',
+  'Rastreador': 'Inteligencia y seguimiento de flujos on-chain.',
+  'Explorador': 'Verificación de transacciones y contratos.'
 };
 
 // --- SUB-COMPONENTES ---
@@ -83,26 +87,18 @@ const EditLinkForm: React.FC<{
           placeholder="URL"
           className="w-full text-[11px] font-bold p-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-red-700"
         />
-        <input 
-          type="text" 
+        <textarea 
           value={local.explanation} 
           onChange={(e) => setLocal({ ...local, explanation: e.target.value })} 
           placeholder="Descripción"
-          className="w-full text-[11px] font-bold p-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-red-700"
-        />
-        <input 
-          type="text" 
-          value={local.networks} 
-          onChange={(e) => setLocal({ ...local, networks: e.target.value })} 
-          placeholder="Redes"
-          className="w-full text-[11px] font-bold p-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-red-700"
+          className="w-full text-[11px] font-bold p-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-red-700 min-h-[60px]"
         />
       </div>
       <button 
         onClick={() => onSave(local)} 
-        className="w-full mt-3 bg-red-700 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-800 transition-all"
+        className="w-full mt-3 bg-red-700 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-800 transition-all shadow-md"
       >
-        <Save size={14} /> Aplicar Cambios
+        <Save size={14} /> Guardar Cambios
       </button>
     </div>
   );
@@ -131,7 +127,7 @@ const ResourceForm: React.FC<{
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input 
           type="text" 
-          placeholder="Nombre del recurso" 
+          placeholder="Nombre" 
           value={localLink.name} 
           onChange={(e) => setLocalLink({ ...localLink, name: e.target.value })} 
           className="w-full text-[11px] font-bold p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-700" 
@@ -144,18 +140,11 @@ const ResourceForm: React.FC<{
           className="w-full text-[11px] font-bold p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-700" 
         />
       </div>
-      <input 
-        type="text" 
-        placeholder="Breve descripción" 
-        value={localLink.explanation} 
-        onChange={(e) => setLocalLink({ ...localLink, explanation: e.target.value })} 
-        className="w-full text-[11px] font-bold p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-700" 
-      />
       <button 
         onClick={handleAdd} 
-        className="w-full bg-black text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all"
+        className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
       >
-        <Plus size={14} className="inline mr-2" /> Añadir a {title}
+        <Plus size={14} /> Añadir a {title}
       </button>
     </div>
   );
@@ -191,27 +180,30 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   }, [item.links]);
 
   return (
-    <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:border-gray-300 hover:shadow-md transition-all flex flex-col group h-full relative">
+    <div className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm hover:border-gray-200 hover:shadow-md transition-all flex flex-col group h-full relative">
       <div className="flex gap-4 items-start mb-5">
-        <div className="text-3xl grayscale group-hover:grayscale-0 transition-all flex-shrink-0 bg-gray-50 p-3 rounded-xl border border-gray-100">
+        <div className="flex-shrink-0 w-12 h-12 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center text-2xl grayscale group-hover:grayscale-0 transition-all">
           {item.emoji}
         </div>
-        <div className="flex-1 min-w-0 pt-1">
+        <div className="flex-1 min-w-0 pt-0.5">
           <div className="flex justify-between items-center mb-1">
-            <h4 className="font-black text-gray-900 uppercase text-sm tracking-tight truncate leading-none">
+            <h4 className="font-black text-gray-900 uppercase text-xs tracking-wider truncate leading-none">
               {item.title}
             </h4>
-            <button 
-              onClick={() => {
-                setEditingId(editingId === item.id ? null : item.id);
-                setEditingLinkName(null);
-              }} 
-              className={`p-1.5 rounded-lg transition-colors ${editingId === item.id ? 'text-red-700 bg-red-50' : 'text-gray-300 hover:text-red-700 hover:bg-gray-50'}`}
-            >
-              <Edit2 size={16} />
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-gray-300 font-mono">{item.order}</span>
+              <button 
+                onClick={() => {
+                  setEditingId(editingId === item.id ? null : item.id);
+                  setEditingLinkName(null);
+                }} 
+                className={`p-1.5 rounded-lg transition-colors ${editingId === item.id ? 'text-red-700 bg-red-50' : 'text-gray-300 hover:text-red-700 hover:bg-gray-50'}`}
+              >
+                <Edit2 size={14} />
+              </button>
+            </div>
           </div>
-          <p className="text-gray-400 text-[10px] font-bold leading-relaxed uppercase tracking-widest">
+          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none">
             {item.desc}
           </p>
         </div>
@@ -222,35 +214,32 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
           <div 
             key={link.name} 
             onClick={() => editingId === item.id && setEditingLinkName(link.name)}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-xl group/link transition-all cursor-pointer ${link.isFavorite ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-gray-50 border-gray-100 hover:border-gray-300'} ${editingId === item.id ? 'ring-2 ring-red-700/10' : ''}`}
-            title={link.explanation || 'Sin descripción'}
+            className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-2xl group/link transition-all cursor-pointer ${link.isFavorite ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-gray-50 border-gray-100 hover:border-gray-300'} ${editingId === item.id ? 'ring-2 ring-red-700/10' : ''}`}
+            title={link.explanation || 'Ver Recurso'}
           >
             <button 
               onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id, link.name); }}
               className={`transition-colors ${link.isFavorite ? 'text-red-700' : 'text-gray-300 hover:text-red-400'}`}
             >
-              <Heart size={12} fill={link.isFavorite ? "currentColor" : "none"} />
+              <Heart size={10} fill={link.isFavorite ? "currentColor" : "none"} />
             </button>
             <div className="flex flex-col">
               <a 
                 href={editingId === item.id ? '#' : link.url} 
                 target={editingId === item.id ? '_self' : '_blank'} 
                 rel="noreferrer" 
-                className="text-[10px] font-black text-gray-800 uppercase tracking-wide group-hover/link:text-red-700 transition-colors"
+                className="text-[10px] font-black text-gray-800 uppercase tracking-tight group-hover/link:text-red-700 transition-colors"
                 onClick={(e) => editingId === item.id && e.preventDefault()}
               >
                 {link.name}
               </a>
-              {link.networks && (
-                <span className="text-[8px] text-gray-400 font-bold truncate max-w-[100px]">{link.networks}</span>
-              )}
             </div>
             {editingId === item.id && (
               <button 
                 onClick={(e) => { e.stopPropagation(); removeResourceLink(item.id, link.name); }} 
-                className="text-gray-400 hover:text-red-700 transition-colors ml-1"
+                className="text-gray-300 hover:text-red-700 transition-colors ml-1"
               >
-                <Trash2 size={12} />
+                <Trash2 size={10} />
               </button>
             )}
             <ExternalLink size={10} className="text-gray-300 group-hover/link:text-red-400 transition-colors" />
@@ -289,7 +278,7 @@ const ResultBox: React.FC<{
       return (
           <button 
               onClick={onAction}
-              className="w-full text-left bg-gray-50 hover:bg-red-50 rounded-2xl border border-dashed border-gray-300 hover:border-red-300 transition-all group p-5 flex items-center justify-between"
+              className="w-full text-left bg-gray-50 hover:bg-red-50 rounded-2xl border border-dashed border-gray-200 hover:border-red-200 transition-all group p-5 flex items-center justify-between"
           >
               <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-lg shadow-sm group-hover:bg-red-700 group-hover:text-white transition-colors">
@@ -305,7 +294,7 @@ const ResultBox: React.FC<{
   if (!res) return null;
 
   return (
-    <div className="w-full text-left bg-white rounded-2xl border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-500 overflow-hidden shadow-sm">
+    <div className="w-full text-left bg-white rounded-2xl border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-500 overflow-hidden shadow-sm mt-4">
       <div className="flex items-center justify-between px-6 py-3 bg-gray-50/80 border-b border-gray-200">
         <div className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">
           <MessageSquare size={14} className="text-red-700" /> {label}
@@ -340,10 +329,10 @@ const Guia: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isLoadingCsv, setIsLoadingCsv] = useState(true);
 
-  // Cargamos el estado guardado del localStorage para aplicar las variaciones tras la carga dinámica
+  // Cargamos el estado guardado del localStorage para inyectar preferencias de usuario
   const [categories, setCategories] = useState<Category[]>(() => {
     try {
-      const saved = localStorage.getItem('guia_user_categories_v14');
+      const saved = localStorage.getItem('guia_user_categories_v25');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -369,14 +358,16 @@ const Guia: React.FC = () => {
           }
           parts.push(current.trim());
           return parts;
-        }).filter(row => row.length > 1 && row[1] !== 'Tipología' && row[1] !== 'Tipologia');
+        }).filter(row => {
+          const ordinal = parseInt(row[0]);
+          return !isNaN(ordinal) && row.length > 1; // Solo procesar filas con ordinal válido (numérico)
+        });
 
-        // MAPA PARA PRESERVAR EL ORDEN EXACTO DEL CSV Y AGRUPAR POR TIPOLOGÍA
         const csvCategoriesMap = new Map<string, Category>();
 
         rows.forEach(row => {
-          if (row.length < 4) return;
-          const tipologia = row[1]; // COLUMNA 2: Nombre del Grupo
+          const ordinal = parseInt(row[0]);
+          const tipologia = row[1]; // COLUMNA 2: Nombre del Grupo (Tipología)
           const nombre = row[2];
           const url = row[3];
           const redes = row[4] || '';
@@ -386,8 +377,9 @@ const Guia: React.FC = () => {
             csvCategoriesMap.set(tipologia, {
               id: tipologia.toLowerCase().replace(/\s+/g, '-'),
               title: tipologia,
+              order: ordinal,
               emoji: CATEGORY_ICONS[tipologia] || '📦',
-              desc: CATEGORY_DESCS[tipologia] || `Recursos agrupados como ${tipologia}.`,
+              desc: CATEGORY_DESCS[tipologia] || `Recursos de ${tipologia}.`,
               links: []
             });
           }
@@ -401,43 +393,38 @@ const Guia: React.FC = () => {
           });
         });
 
-        const csvCategories = Array.from(csvCategoriesMap.values());
+        // Ordenar categorías según el ordinal del CSV
+        const csvCategoriesSorted = Array.from(csvCategoriesMap.values()).sort((a, b) => a.order - b.order);
 
-        // LÓGICA DE FUSIÓN CON AJUSTES DEL USUARIO DE LA MEMORIA LOCAL
+        // MEZCLA INTELIGENTE CON MEMORIA LOCAL
         if (categories.length > 0) {
-          const merged = csvCategories.map(csvCat => {
+          const merged = csvCategoriesSorted.map(csvCat => {
             const localCat = categories.find(lc => lc.id === csvCat.id);
             if (!localCat) return csvCat;
 
             const finalLinks = [...csvCat.links].map(csvLink => {
               const localLink = localCat.links.find(ll => ll.name === csvLink.name);
-              // Inyectamos ajustes (favoritos, cambios de URL) sobre el link del CSV
+              // Inyectar ajustes de usuario (favoritos, etc.) sobre los datos del CSV
               return localLink ? { ...csvLink, ...localLink } : csvLink;
             });
 
-            // Añadir enlaces que el usuario añadió manualmente y que no están en el CSV
+            // Preservar links añadidos manualmente por el usuario que no están en el CSV original
             localCat.links.forEach(ll => {
               if (!finalLinks.find(fl => fl.name === ll.name)) {
                 finalLinks.push(ll);
               }
             });
 
-            // Filtrar enlaces que el usuario eliminó (marcándolos con un flag especial o simplemente borrándolos)
-            // Para esta versión, asumimos que si no está en localCat y el usuario editó esa categoría, se borró.
-            // Pero como el CSV es la base, preferimos mantener la integridad y solo aplicar ediciones/favoritos.
-            
             return { ...csvCat, links: finalLinks };
           });
           
-          // Añadir categorías que el usuario creó manualmente
-          const extraLocalCats = categories.filter(lc => !csvCategoriesMap.has(lc.title));
-          setCategories([...merged, ...extraLocalCats]);
+          setCategories(merged);
         } else {
-          setCategories(csvCategories);
+          setCategories(csvCategoriesSorted);
         }
 
       } catch (e) {
-        console.error("Error crítico cargando CSV:", e);
+        console.error("Error al cargar la base de datos CSV:", e);
       } finally {
         setIsLoadingCsv(false);
       }
@@ -446,10 +433,10 @@ const Guia: React.FC = () => {
     loadCsvData();
   }, []);
 
-  // Persistencia de cambios locales
+  // Persistencia de cambios en localStorage
   useEffect(() => { 
     if (categories.length > 0) {
-      localStorage.setItem('guia_user_categories_v14', JSON.stringify(categories)); 
+      localStorage.setItem('guia_user_categories_v25', JSON.stringify(categories)); 
     }
   }, [categories]);
 
@@ -519,26 +506,26 @@ const Guia: React.FC = () => {
 
   if (isLoadingCsv && categories.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-        <Repeat size={40} className="text-red-700 animate-spin mb-4" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sincronizando Recursos...</p>
+      <div className="flex flex-col items-center justify-center py-24 animate-pulse">
+        <Repeat size={48} className="text-red-700 animate-spin mb-6" />
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">Sincronizando Recursos Dinámicos...</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto py-2 px-6 animate-in fade-in duration-700">
-      <div className="flex justify-center mb-10">
-        <div className="flex w-full max-w-3xl bg-gray-50 p-1.5 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="flex justify-center mb-12">
+        <div className="flex w-full max-w-3xl bg-gray-50 p-1.5 rounded-3xl border border-gray-100 shadow-sm">
           {[
-            { id: 'herramientas', label: 'Directorio', icon: Zap }, 
+            { id: 'herramientas', label: 'Herramientas', icon: Zap }, 
             { id: 'ia', label: 'Laborator-IA', icon: BrainCircuit }, 
             { id: 'teoria', label: 'Saber Hacer', icon: FileText }
           ].map(tab => (
             <button 
               key={tab.id} 
               onClick={() => setActiveTab(tab.id as any)} 
-              className={`flex-1 flex items-center justify-center gap-3 px-10 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === tab.id ? 'bg-white shadow-md text-red-700' : 'text-gray-400 hover:text-gray-700 hover:bg-white/50'}`}
+              className={`flex-1 flex items-center justify-center gap-3 px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === tab.id ? 'bg-white shadow-md text-red-700' : 'text-gray-400 hover:text-gray-700 hover:bg-white/50'}`}
             >
               <tab.icon size={16} /> {tab.label}
             </button>
@@ -549,10 +536,10 @@ const Guia: React.FC = () => {
       {activeTab === 'herramientas' && (
         <div className="space-y-12 animate-in slide-in-from-bottom-2 duration-500">
           <div>
-            <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.4em] mb-8 flex items-center gap-3 pl-1">
-              <Zap size={14} className="text-red-700" /> Herramientas y Servicios DeFi
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mb-8 flex items-center gap-3 pl-1">
+              <ListOrdered size={14} className="text-red-700" /> Directorio Dinámico (Ordinales CSV)
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
               {categories.map((cat) => (
                 <ResourceCard 
                   key={cat.id} 
@@ -571,9 +558,9 @@ const Guia: React.FC = () => {
       )}
 
       {activeTab === 'ia' && (
-        <div className="space-y-6 animate-in slide-in-from-bottom-2 max-w-4xl mx-auto">
+        <div className="space-y-8 animate-in slide-in-from-bottom-2 max-w-4xl mx-auto">
           {GEMINI_LABS.map((lab) => (
-            <div key={lab.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-10 flex flex-col items-center text-center">
+            <div key={lab.id} className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10 flex flex-col items-center text-center">
               <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-3 flex items-center gap-3">
                 {lab.title.replace('Laboratoria', 'Laborator-IA')} <Sparkles size={24} className="text-red-700" />
               </h3>
@@ -584,7 +571,7 @@ const Guia: React.FC = () => {
                     {input.label && <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">{input.label}</label>}
                     {input.type === 'select' ? (
                       <select 
-                        className="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl text-xs font-black outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-red-700/20" 
+                        className="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-2xl text-xs font-black outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-red-700/20" 
                         onChange={(e) => setFormStates(prev => ({ ...prev, [`${lab.id}-${input.id}`]: e.target.value }))}
                       >
                         {input.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -593,7 +580,7 @@ const Guia: React.FC = () => {
                       <input 
                         type={input.type} 
                         placeholder={input.placeholder} 
-                        className="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-red-700/20" 
+                        className="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-red-700/20" 
                         onChange={(e) => setFormStates(prev => ({ ...prev, [`${lab.id}-${input.id}`]: e.target.value }))} 
                       />
                     )}
@@ -602,14 +589,14 @@ const Guia: React.FC = () => {
                 <button 
                   onClick={() => handleAiAction(lab.id, lab.prompt, lab.inputs)} 
                   disabled={aiResults[lab.id]?.loading} 
-                  className="h-12 px-8 bg-gray-900 hover:bg-red-800 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-gray-200 hover:shadow-red-200"
+                  className="h-12 px-8 bg-gray-900 hover:bg-red-800 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-gray-200 hover:shadow-red-200"
                 >
                   {aiResults[lab.id]?.loading ? <Repeat className="animate-spin" size={18} /> : <Sparkles size={18} />} {lab.buttonText}
                 </button>
               </div>
               <ResultBox 
                 id={lab.id} 
-                label="Resultado Laborator-IA" 
+                label="Análisis Laborator-IA" 
                 res={aiResults[lab.id]} 
                 isExpanded={!!expandedResults[lab.id]}
                 onToggleExpand={toggleExpand}
@@ -620,38 +607,33 @@ const Guia: React.FC = () => {
       )}
 
       {activeTab === 'teoria' && (
-        <div className="space-y-12">
-          <div>
-            <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.4em] mb-6 flex items-center gap-3 pl-1">
-              <Globe size={14} className="text-red-700" /> Metodología y Estrategia
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start animate-in slide-in-from-bottom-2">
-              {Object.entries(MODAL_CONTENT).map(([key, content]) => (
-                <div key={key} className="bg-white border border-gray-100 p-10 rounded-[2.5rem] shadow-sm flex flex-col relative overflow-hidden group h-full">
-                  <div className="absolute -right-6 -top-6 opacity-[0.03] group-hover:opacity-10 transition-opacity">
-                    <content.icon size={150} />
-                  </div>
-                  <div className="flex items-center gap-5 mb-6 relative z-10">
-                    <div className={`p-4 rounded-2xl bg-gray-50 ${content.color} shadow-inner`}>
-                      <content.icon size={28} />
-                    </div>
-                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">{content.title}</h3>
-                  </div>
-                  <p className="text-gray-500 text-[12px] leading-relaxed mb-6 font-medium relative z-10">{content.body}</p>
-                  
-                  <div className="relative z-10">
-                    <ResultBox 
-                        id={`quadrant-${content.id}`} 
-                        label="Teoría Aplicada" 
-                        res={aiResults[`quadrant-${content.id}`]}
-                        isExpanded={!!expandedResults[`quadrant-${content.id}`]}
-                        onToggleExpand={toggleExpand}
-                        onAction={() => handleAiAction(`quadrant-${content.id}`, content.prompt)}
-                    />
-                  </div>
+        <div className="space-y-12 animate-in slide-in-from-bottom-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            {Object.entries(MODAL_CONTENT).map(([key, content]) => (
+              <div key={key} className="bg-white border border-gray-100 p-10 rounded-[2.5rem] shadow-sm flex flex-col relative overflow-hidden group h-full">
+                <div className="absolute -right-6 -top-6 opacity-[0.03] group-hover:opacity-10 transition-opacity">
+                  <content.icon size={150} />
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center gap-5 mb-6 relative z-10">
+                  <div className={`p-4 rounded-2xl bg-gray-50 ${content.color} shadow-inner`}>
+                    <content.icon size={28} />
+                  </div>
+                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">{content.title}</h3>
+                </div>
+                <p className="text-gray-500 text-[12px] leading-relaxed mb-6 font-medium relative z-10">{content.body}</p>
+                
+                <div className="relative z-10">
+                  <ResultBox 
+                      id={`quadrant-${content.id}`} 
+                      label="Teoría Aplicada" 
+                      res={aiResults[`quadrant-${content.id}`]}
+                      isExpanded={!!expandedResults[`quadrant-${content.id}`]}
+                      onToggleExpand={toggleExpand}
+                      onAction={() => handleAiAction(`quadrant-${content.id}`, content.prompt)}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

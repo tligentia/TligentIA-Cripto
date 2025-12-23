@@ -1,5 +1,5 @@
 
-export const APP_VERSION = 'v25.12AB';
+export const APP_VERSION = 'v25.12AC';
 
 import { 
   TrendingUp, 
@@ -98,94 +98,6 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
   ETH: { code: 'ETH', symbol: 'Ξ', name: 'Ethereum', isCrypto: true },
 };
 
-// --- GUIA DATA ---
-
-export const INITIAL_TOOLS = [
-  { 
-    emoji: '🔑', 
-    title: 'Wallets', 
-    id: 'tools-wallets', 
-    desc: 'Tu identidad y banco de autocustodia digital.', 
-    links: [
-      { name: 'MetaMask', url: 'https://metamask.io/' }, 
-      { name: 'Rabby', url: 'https://rabby.io/' },
-      { name: 'Trust Wallet', url: 'https://trustwallet.com/' }
-    ] 
-  },
-  { 
-    emoji: '🔄', 
-    title: 'DEXs', 
-    id: 'tools-dexs', 
-    desc: 'Intercambios descentralizados sin intermediarios.', 
-    links: [
-      { name: 'Uniswap', url: 'https://uniswap.org/' }, 
-      { name: 'Curve', url: 'https://curve.fi/' }
-    ] 
-  },
-  { 
-    emoji: '💰', 
-    title: 'Lending', 
-    id: 'tools-lending', 
-    desc: 'Protocolos de préstamo y generación de interés colateral.', 
-    links: [
-      { name: 'Aave', url: 'https://aave.com/' }, 
-      { name: 'Compound', url: 'https://compound.finance/' }
-    ] 
-  },
-  { 
-    emoji: '📊', 
-    title: 'Agregadores', 
-    id: 'tools-aggregators', 
-    desc: 'Optimizadores de rutas para mejores rendimientos.', 
-    links: [
-      { name: '1inch', url: 'https://1inch.io/' }, 
-      { name: 'Krystal', url: 'https://defi.krystal.app/' }
-    ] 
-  }
-];
-
-export const INITIAL_PLATFORMS = [
-  { 
-    emoji: '🏛️', 
-    title: 'TradFi', 
-    id: 'platforms-traditional', 
-    desc: 'Análisis macroeconómico y mercados tradicionales.', 
-    links: [
-      { name: 'TradingView', url: 'https://www.tradingview.com/' }, 
-      { name: 'Investing', url: 'https://www.investing.com/' }
-    ] 
-  },
-  { 
-    emoji: '🪙', 
-    title: 'Data Agg', 
-    id: 'platforms-aggregators', 
-    desc: 'Enciclopedia de métricas y precios crypto en tiempo real.', 
-    links: [
-      { name: 'DefiLlama', url: 'https://defillama.com/' }, 
-      { name: 'CoinGecko', url: 'https://www.coingecko.com/' }
-    ] 
-  },
-  { 
-    emoji: '🔗', 
-    title: 'On-Chain', 
-    id: 'platforms-onchain', 
-    desc: 'Análisis de ballenas, flujos de red y actividad real.', 
-    links: [
-      { name: 'Dune', url: 'https://dune.com/' }, 
-      { name: 'Nansen', url: 'https://www.nansen.ai/' }
-    ] 
-  },
-  { 
-    emoji: '🔎', 
-    title: 'Explorers', 
-    id: 'platforms-explorers', 
-    desc: 'Verificación de contratos y auditoría de transacciones.', 
-    links: [
-      { name: 'Etherscan', url: 'https://etherscan.io/' }, 
-      { name: 'Solscan', url: 'https://solscan.io/' }
-    ] 
-  }
-];
 
 export const MODAL_CONTENT = {
   q1: { 
