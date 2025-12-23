@@ -544,9 +544,19 @@ export const Guia: React.FC = () => {
       {activeTab === 'herramientas' && (
         <div className="space-y-12 animate-in slide-in-from-bottom-2 duration-500">
           <div>
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mb-8 flex items-center gap-3 pl-1">
-              <ListOrdered size={14} className="text-red-700" /> Directorio Dinámico (Google Sheets)
-            </h3>
+            <div className="flex items-center justify-between mb-8 pl-1">
+              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] flex items-center gap-3">
+                <ListOrdered size={14} className="text-red-700" /> Directorio Dinámico
+              </h3>
+              <a 
+                href="https://docs.google.com/spreadsheets/d/19BqYHKLXXjNmZCU7DSQeqj1VKoASD1Kt4lj8Vnu1XoA/edit" 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 hover:text-red-700 transition-colors bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm"
+              >
+                Google Sheets <ExternalLink size={12} />
+              </a>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
               {categories.map((cat) => (
                 <ResourceCard 
