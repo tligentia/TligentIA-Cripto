@@ -1,4 +1,6 @@
 
+export const APP_VERSION = 'v25.12AB';
+
 import { 
   TrendingUp, 
   TrendingDown, 

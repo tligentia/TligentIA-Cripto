@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Settings, AlertTriangle } from 'lucide-react';
-import { APP_VERSION, getAllowedIps } from './Parameters';
+import { getAllowedIps } from './Parameters';
+import { APP_VERSION } from '../constants';
 
 interface FooterProps {
     assetCount: number;

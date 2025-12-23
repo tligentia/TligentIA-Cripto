@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Loader2, Gauge, Activity } from 'lucide-react';
 import { fetchAssetData } from '../services/market';
@@ -60,13 +61,13 @@ const VixWidget: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col items-center justify-center relative overflow-hidden p-2">
-        <div className="flex items-center gap-1.5 mb-1 absolute top-3 left-4">
+        <div className="flex items-center justify-center gap-1.5 mb-1 absolute top-1 inset-x-0">
             <Activity size={14} className="text-blue-500" />
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">VIX (Volatilidad)</span>
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Bolsa</span>
         </div>
         
         {/* Gauge Visual */}
-        <div className="relative w-40 h-20 mt-4 mb-2">
+        <div className="relative w-40 h-20 mt-8 mb-2">
             <div className="absolute top-0 left-0 w-full h-full bg-gray-100 rounded-t-full overflow-hidden">
                 {/* Gradient: Red (Left/Fear) -> Yellow -> Green (Right/Calm) */}
                 <div className="w-full h-full bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 opacity-30"></div>

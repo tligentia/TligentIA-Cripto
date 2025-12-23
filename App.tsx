@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BarChart3, Clock, Database, Sparkles, RefreshCw, Search, Plus, Loader2, AlertCircle, Coins, Bitcoin, Building2, Activity, Zap, BrainCircuit, Info, LayoutGrid } from 'lucide-react';
+import { BarChart3, Database, Sparkles, RefreshCw, Search, Plus, Loader2, AlertCircle, Activity, BrainCircuit, LayoutGrid } from 'lucide-react';
 import { Asset, CurrencyCode, AssetType } from './types';
 import { COLORS, DEFAULT_ASSETS, TOP_STOCKS, CURRENCIES, getAllowedIps } from './Plantilla/Parameters';
 import { resolveAsset, fetchExchangeRates } from './services/market';
@@ -27,7 +27,10 @@ export default function App() {
   const [view, setView] = useState<'overview' | 'dashboard' | 'correlation' | 'guia'>('overview');
   const [scrollToSymbol, setScrollToSymbol] = useState<string | null>(null);
   
-  // -- AUTO LOGIN BY IP --
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const wasAutoRefreshEnabledBeforeNav = useRef(true);
+  const prevView = useRef<string>('overview');
+  
   useEffect(() => {
     const checkIp = async () => {
       try {
@@ -73,18 +76,14 @@ export default function App() {
   });
 
   const [rates, setRates] = useState<Record<CurrencyCode, number>>({ USD: 1, EUR: 0.92, JPY: 150, BTC: 0.000015, ETH: 0.00035 });
-
   const [newSymbol, setNewSymbol] = useState('');
   const [addError, setAddError] = useState<string | null>(null);
-  
   const [aiSuggestionData, setAiSuggestionData] = useState<{symbol: string, reason: string, label: string} | null>(null);
   const [showAiReason, setShowAiReason] = useState(false);
-
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isAdding, setIsAdding] = useState(false);
   const [showSmartCommands, setShowSmartCommands] = useState(false);
-  
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { localStorage.setItem('criptogo_real_assets', JSON.stringify(assets)); }, [assets]);
@@ -93,35 +92,31 @@ export default function App() {
   useEffect(() => { localStorage.setItem('criptogo_market_mode', marketMode); }, [marketMode]);
   
   useEffect(() => { 
-      if (apiKey && apiKey.trim().length > 0) {
-          localStorage.setItem('criptogo_apikey', apiKey); 
-      } else {
-          localStorage.removeItem('criptogo_apikey');
-      }
+      if (apiKey && apiKey.trim().length > 0) localStorage.setItem('criptogo_apikey', apiKey); 
+      else localStorage.removeItem('criptogo_apikey');
   }, [apiKey]);
 
   useEffect(() => {
-      const getRates = async () => {
-          const fetchedRates = await fetchExchangeRates();
-          setRates(fetchedRates);
-      };
+      const getRates = async () => setRates(await fetchExchangeRates());
       getRates();
   }, [refreshTrigger]);
 
-  // -- SCROLL TO ASSET HANDLER --
+  /**
+   * EFECTO DE SCROLL UNIVERSAL
+   * Se dispara cuando scrollToSymbol tiene un valor.
+   */
   useEffect(() => {
-    if (view === 'dashboard' && scrollToSymbol) {
-        // Wait for render
+    if (scrollToSymbol) {
         const timer = setTimeout(() => {
             const element = document.getElementById(`asset-card-${scrollToSymbol}`);
             if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                setScrollToSymbol(null); // Clear target after scroll
             }
-        }, 300);
+            setScrollToSymbol(null);
+        }, 100);
         return () => clearTimeout(timer);
     }
-  }, [view, scrollToSymbol]);
+  }, [scrollToSymbol]);
 
   const handleRefreshAll = () => { 
     setLastUpdate(new Date()); 
@@ -129,22 +124,39 @@ export default function App() {
   };
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      handleRefreshAll();
-    }, 30000); 
-    
-    return () => clearInterval(interval);
-  }, []);
+    if (prevView.current === 'overview' && view !== 'overview') {
+        wasAutoRefreshEnabledBeforeNav.current = autoRefreshEnabled;
+        setAutoRefreshEnabled(false);
+    } else if (prevView.current !== 'overview' && view === 'overview') {
+        setAutoRefreshEnabled(wasAutoRefreshEnabledBeforeNav.current);
+    }
+    prevView.current = view;
+  }, [view]);
+
+  useEffect(() => {
+    if (autoRefreshEnabled && view === 'overview') {
+        const interval = window.setInterval(handleRefreshAll, 30000); 
+        return () => clearInterval(interval);
+    }
+  }, [view, autoRefreshEnabled]);
 
   const visibleAssets = useMemo(() => {
     let list: Asset[] = [];
-    if (marketMode === 'CRYPTO') {
-        list = assets.filter(a => (a.type || 'CRYPTO') === 'CRYPTO');
-    } else {
+    if (view === 'dashboard' || view === 'overview') {
         const userStocks = assets.filter(a => a.type === 'STOCK');
-        const uniqueTopStocks = TOP_STOCKS.filter(t => !userStocks.some(u => u.symbol === t.symbol));
-        list = [...userStocks, ...uniqueTopStocks];
+        const userCryptos = assets.filter(a => (a.type || 'CRYPTO') === 'CRYPTO');
+        const topStocks = TOP_STOCKS.filter(t => !userStocks.some(u => u.symbol === t.symbol));
+        list = [...userCryptos, ...userStocks, ...topStocks];
+    } else {
+        if (marketMode === 'CRYPTO') {
+            list = assets.filter(a => (a.type || 'CRYPTO') === 'CRYPTO');
+        } else {
+            const userStocks = assets.filter(a => a.type === 'STOCK');
+            const topStocks = TOP_STOCKS.filter(t => !userStocks.some(u => u.symbol === t.symbol));
+            list = [...userStocks, ...topStocks];
+        }
     }
+
     return list.map(asset => ({
         ...asset,
         isFavorite: favorites.includes(asset.symbol)
@@ -153,7 +165,7 @@ export default function App() {
         if (!a.isFavorite && b.isFavorite) return 1;
         return 0;
     });
-  }, [assets, marketMode, favorites]);
+  }, [assets, marketMode, favorites, view]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,74 +175,52 @@ export default function App() {
     setAiSuggestionData(null); 
     
     let targetSymbol = newSymbol.trim();
-    let isSmartSearch = false;
 
-    const smartCommands = ['?', '?+', '?++', '?-'];
-    if (smartCommands.includes(targetSymbol)) {
+    if (['?', '?+', '?++', '?-'].includes(targetSymbol)) {
         if (!apiKey) {
             setAddError("Configura tu API Key para usar la Búsqueda Inteligente.");
             setShowAjustes(true);
             setIsAdding(false);
             return;
         }
-
-        isSmartSearch = true;
         try {
             let cmd: 'BEST' | 'SHORT' | 'MID' | 'RISK' = 'BEST';
             let label = 'Mejor Valor';
-            
             if (targetSymbol === '?+') { cmd = 'SHORT'; label = 'Crecimiento Corto'; }
             else if (targetSymbol === '?++') { cmd = 'MID'; label = 'Crecimiento Medio'; }
             else if (targetSymbol === '?-') { cmd = 'RISK'; label = 'Especulativo'; }
-
-            const excluded = visibleAssets.map(a => a.symbol);
-            const suggestion = await getSmartRecommendation(cmd, marketMode, apiKey, excluded);
-            
+            const suggestion = await getSmartRecommendation(cmd, marketMode, apiKey, visibleAssets.map(a => a.symbol));
             if (!suggestion || !suggestion.symbol) {
-                setAddError("La IA no pudo sugerir un activo en este momento.");
+                setAddError("La IA no pudo sugerir un activo.");
                 setIsAdding(false);
                 return;
             }
-            
             targetSymbol = suggestion.symbol; 
-            
-            setAiSuggestionData({
-                symbol: suggestion.symbol,
-                reason: suggestion.reason,
-                label: label
-            });
-
+            setAiSuggestionData({ symbol: suggestion.symbol, reason: suggestion.reason, label });
         } catch (err) {
-            setAddError("Error consultando a la IA.");
+            setAddError("Error IA.");
             setIsAdding(false);
             return;
         }
     }
 
-    const foundAsset = await resolveAsset(targetSymbol, marketMode);
+    const foundAsset = await resolveAsset(targetSymbol);
     
     if (foundAsset) {
-        const isUserAsset = assets.some(a => a.symbol === foundAsset.symbol && (a.type || 'CRYPTO') === marketMode);
-        const isTopStock = marketMode === 'STOCK' && TOP_STOCKS.some(t => t.symbol === foundAsset.symbol);
+        const alreadyExists = assets.some(a => a.symbol === foundAsset.symbol && a.type === foundAsset.type);
+        const inTopStocks = foundAsset.type === 'STOCK' && TOP_STOCKS.some(t => t.symbol === foundAsset.symbol);
 
-        if (isUserAsset) { 
-            setAddError(`El activo ${foundAsset.symbol} ya está en tu lista.`);
-            setAiSuggestionData(null);
-        } else if (isTopStock) {
-            setAddError(`El activo ${foundAsset.symbol} ya está incluido por defecto.`);
-            setAiSuggestionData(null);
+        if (alreadyExists || inTopStocks) { 
+            // Si ya existe, simplemente hacemos scroll hacia él
+            setScrollToSymbol(foundAsset.symbol);
+            setNewSymbol('');
+            setAddError(null);
         } else { 
             setAssets(prev => [foundAsset, ...prev]); 
             setNewSymbol(''); 
-            if (!isSmartSearch) setAddError(null); 
         }
     } else { 
-        if (marketMode === 'CRYPTO') {
-            setAddError(`No encontrado "${targetSymbol}" en Binance (verifica USDT).`);
-        } else {
-            setAddError(`No encontrado "${targetSymbol}" en Yahoo.`);
-        }
-        setAiSuggestionData(null);
+        setAddError(`No se encontró "${targetSymbol}" en Binance ni Yahoo Finance.`);
     }
     setIsAdding(false);
   };
@@ -238,51 +228,24 @@ export default function App() {
   const handleCommandClick = (cmd: string) => {
       setNewSymbol(cmd);
       setShowSmartCommands(false);
-      if (inputRef.current) {
-          inputRef.current.focus();
-      }
+      if (inputRef.current) inputRef.current.focus();
   };
 
   const handleDelete = (symbol: string) => setAssets(assets.filter(a => a.symbol !== symbol));
-
-  const handleSaveApiKey = (key: string) => {
-      setApiKey(key);
-      localStorage.setItem('criptogo_apikey', key);
-      alert('API Key guardada correctamente.');
-  };
-
-  const handleReset = () => { if(confirm('¿Restaurar lista original?')) setAssets(DEFAULT_ASSETS); };
-
   const handleToggleFavorite = (symbol: string) => {
-      if (favorites.includes(symbol)) {
-          setFavorites(favorites.filter(f => f !== symbol));
-      } else {
-          setFavorites([...favorites, symbol]);
-      }
-  };
-
-  const handleManageCookies = () => {
-    setShowCookies(true);
+      setFavorites(favorites.includes(symbol) ? favorites.filter(f => f !== symbol) : [...favorites, symbol]);
   };
 
   const moveAsset = (symbol: string, direction: 'left' | 'right') => {
     const realIndex = assets.findIndex(a => a.symbol === symbol);
     if (realIndex === -1) return; 
-
     const newAssets = [...assets];
-    if (direction === 'left' && realIndex > 0) { 
-         [newAssets[realIndex - 1], newAssets[realIndex]] = [newAssets[realIndex], newAssets[realIndex - 1]];
-    } else if (direction === 'right' && realIndex < newAssets.length - 1) {
-         [newAssets[realIndex + 1], newAssets[realIndex]] = [newAssets[realIndex], newAssets[realIndex + 1]];
-    }
+    if (direction === 'left' && realIndex > 0) [newAssets[realIndex - 1], newAssets[realIndex]] = [newAssets[realIndex], newAssets[realIndex - 1]];
+    else if (direction === 'right' && realIndex < newAssets.length - 1) [newAssets[realIndex + 1], newAssets[realIndex]] = [newAssets[realIndex], newAssets[realIndex + 1]];
     setAssets(newAssets);
   };
 
-  const navigateToAnalysis = () => {
-      setView('dashboard');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
+  const navigateToAnalysis = () => { setView('dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const handleWidgetNavigation = (asset: Asset) => {
     setMarketMode(asset.type === 'STOCK' ? 'STOCK' : 'CRYPTO');
     setView('dashboard');
@@ -295,19 +258,6 @@ export default function App() {
     <div className={`min-h-screen ${COLORS.bg} font-sans text-gray-900 p-4 md:p-8 print:bg-white print:p-0 ${!isAuthenticated ? 'blur-sm pointer-events-none' : ''}`}>
       <div className="max-w-7xl mx-auto print:max-w-none">
         
-        <div className="hidden print:block mb-8 border-b-2 border-black pb-4">
-            <div className="flex justify-between items-end">
-                <div>
-                    <h1 className="text-2xl font-black uppercase tracking-wider text-black">Informe Técnico de Situación</h1>
-                    <p className="text-sm font-mono text-gray-600 mt-1">MÉTODO CRIPTOGO • ANÁLISIS DE CICLO DE MERCADO</p>
-                </div>
-                <div className="text-right text-xs font-mono text-gray-500">
-                    <p>Fecha: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
-                    <p>Analista: Jesús de Pablos</p>
-                </div>
-            </div>
-        </div>
-
         <header className="sticky top-0 z-50 bg-gray-50 mb-8 border-b border-gray-200 pb-6 pt-4 print:hidden">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <div>
@@ -316,186 +266,83 @@ export default function App() {
                     Cripto<span className="text-red-700">GO</span>
                 </h1>
                 <p className="text-gray-500 mt-1 text-xs uppercase tracking-wide font-medium flex items-center gap-1">
-                    <Database size={12} /> Datos Reales ({marketMode === 'CRYPTO' ? 'Binance' : 'Yahoo'}) • Multi-Timeframe • <Sparkles size={12} className="text-indigo-500"/> Gemini AI Inside
+                    <Database size={12} /> {view === 'dashboard' ? 'Visión Integrada DeFi/TradFi' : `Datos Reales Integrados`} • <Sparkles size={12} className="text-indigo-500"/> Gemini AI Inside
                 </p>
             </div>
             <div className="flex flex-col items-end gap-2">
                  <div className="flex items-center gap-2 text-xs bg-white px-3 py-1.5 rounded border border-gray-200 shadow-sm">
-                    <Clock size={14} className="text-gray-400"/>
-                    <span className="text-gray-500">Última sincro:</span>
+                    <input 
+                        type="checkbox" 
+                        checked={autoRefreshEnabled} 
+                        onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-red-700 focus:ring-red-500 cursor-pointer"
+                        title="Auto-refresco (30s)"
+                    />
+                    <span className="text-gray-500">Sincro:</span>
                     <span className="font-mono font-bold text-gray-900">{lastUpdate.toLocaleTimeString()}</span>
-                    
                     <div className="h-3 w-px bg-gray-300 mx-1"></div>
-                    
-                    <button 
-                        onClick={handleRefreshAll} 
-                        className="text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 p-1 -my-1 rounded transition-all"
-                        title="Actualizar precios"
-                    >
-                        <RefreshCw size={14} />
-                    </button>
+                    <button onClick={handleRefreshAll} className="text-gray-500 hover:text-indigo-600 p-1 -my-1 rounded transition-all"><RefreshCw size={14} /></button>
                  </div>
 
                  <div className="flex gap-3 items-center">
-                    
-                    {(view === 'dashboard' || view === 'overview') && (
-                        <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm animate-in fade-in zoom-in-95 duration-200">
-                            <button 
-                                onClick={() => setMarketMode('CRYPTO')}
-                                className={`px-3 py-1.5 rounded flex items-center gap-1 transition-all ${marketMode === 'CRYPTO' ? 'bg-white shadow text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
-                                title="Mercado Cripto"
-                            >
-                                <Bitcoin size={16} />
-                            </button>
-                            <button 
-                                onClick={() => setMarketMode('STOCK')}
-                                className={`px-3 py-1.5 rounded flex items-center gap-1 transition-all ${marketMode === 'STOCK' ? 'bg-white shadow text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-                                title="Mercado de Valores (Stock)"
-                            >
-                                <Building2 size={16} />
-                            </button>
-                            <div className="h-4 w-px bg-gray-300 my-auto ml-1"></div>
-                        </div>
-                    )}
-
                     <div className="flex bg-gray-100 rounded border border-gray-200 p-0.5 shadow-sm">
-                        <button 
-                            onClick={() => setView('overview')}
-                            className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'overview' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-                            title="Dashboard General"
-                        >
-                            <LayoutGrid size={16} />
-                        </button>
-                        <button 
-                            onClick={() => setView('dashboard')}
-                            className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'dashboard' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-                            title="Análisis Detallado"
-                        >
-                            <BarChart3 size={16} />
-                        </button>
-                        <button 
-                            onClick={() => setView('correlation')}
-                            className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'correlation' ? 'bg-white shadow text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
-                            title="Análisis de Correlación"
-                        >
-                            <Activity size={16} />
-                        </button>
-                        <button 
-                            onClick={() => setView('guia')}
-                            className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'guia' ? 'bg-white shadow text-red-700 font-bold' : 'text-gray-400 hover:text-gray-600'}`}
-                            title="GuIA Masterclass"
-                        >
-                            <Sparkles size={16} />
-                        </button>
+                        <button onClick={() => setView('overview')} className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'overview' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`} title="Dashboard"><LayoutGrid size={16} /></button>
+                        <button onClick={() => setView('dashboard')} className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'dashboard' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`} title="Análisis Detallado"><BarChart3 size={16} /></button>
+                        <button onClick={() => setView('correlation')} className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'correlation' ? 'bg-white shadow text-red-600' : 'text-gray-400 hover:text-gray-600'}`} title="Correlación"><Activity size={16} /></button>
+                        <button onClick={() => setView('guia')} className={`p-1.5 rounded transition-all flex items-center px-3 ${view === 'guia' ? 'bg-white shadow text-red-700 font-bold' : 'text-gray-400 hover:text-gray-600'}`} title="GuIA"><Sparkles size={16} /></button>
                     </div>
 
-                    <div className="h-4 w-px bg-gray-300"></div>
-
                     <div className="relative">
-                        <button 
-                            onClick={() => setCurrencyOpen(!currencyOpen)}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded border transition-colors ${currencyOpen ? 'bg-gray-200 border-gray-300' : 'bg-gray-100 border-gray-200 hover:bg-gray-200'} text-gray-800`}
-                            title={`Moneda actual: ${currency}`}
-                        >
-                            {CURRENCIES[currency].symbol}
-                        </button>
-                        
+                        <button onClick={() => setCurrencyOpen(!currencyOpen)} className={`flex items-center gap-1 px-3 py-1.5 rounded border transition-colors ${currencyOpen ? 'bg-gray-200 border-gray-300' : 'bg-gray-100 border-gray-200 hover:bg-gray-200'} text-gray-800`}>{CURRENCIES[currency].symbol}</button>
                         {currencyOpen && (
                             <>
                                 <div className="fixed inset-0 z-40" onClick={() => setCurrencyOpen(false)}></div>
                                 <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-200 z-50 animate-in fade-in zoom-in-95 duration-100">
                                     {Object.values(CURRENCIES).map((c) => (
-                                        <button 
-                                            key={c.code}
-                                            onClick={() => { setCurrency(c.code); setCurrencyOpen(false); }}
-                                            className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-gray-50 flex items-center justify-between ${currency === c.code ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700'}`}
-                                        >
-                                            <span>{c.name}</span>
-                                            <span className="font-mono">{c.symbol}</span>
-                                        </button>
+                                        <button key={c.code} onClick={() => { setCurrency(c.code); setCurrencyOpen(false); }} className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-gray-50 flex items-center justify-between ${currency === c.code ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700'}`}><span>{c.name}</span><span className="font-mono">{c.symbol}</span></button>
                                     ))}
                                 </div>
                             </>
                         )}
                     </div>
-
                  </div>
             </div>
           </div>
         </header>
 
         <div className={view === 'overview' ? 'block' : 'hidden'}>
-            <GeneralDashboard 
-                userAssets={assets} 
-                currency={currency} 
-                rate={rates[currency]}
-                onAddClick={navigateToAnalysis}
-                onDelete={handleDelete}
-                onToggleFavorite={handleToggleFavorite}
-                onMove={moveAsset}
-                onWidgetClick={handleWidgetNavigation}
-                refreshTrigger={refreshTrigger}
-            />
+            <GeneralDashboard userAssets={assets} currency={currency} rate={rates[currency]} onAddClick={navigateToAnalysis} onDelete={handleDelete} onToggleFavorite={handleToggleFavorite} onMove={moveAsset} onWidgetClick={handleWidgetNavigation} refreshTrigger={refreshTrigger} />
         </div>
         
         <div className={view === 'dashboard' ? 'block' : 'hidden'}>
           <div className="mb-8 flex flex-col md:flex-row gap-4 print:hidden">
                 <div className="w-full md:w-2/5 bg-white rounded-lg shadow-sm border border-gray-200 min-h-[160px] overflow-hidden">
-                    {marketMode === 'CRYPTO' ? (
-                       <FearGreedWidget />
-                    ) : (
-                       <VixWidget />
-                    )}
+                    <div className="grid grid-cols-2 h-full">
+                        <FearGreedWidget />
+                        <div className="border-l border-gray-100"><VixWidget /></div>
+                    </div>
                 </div>
 
                 <div className="w-full md:w-3/5 bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center min-h-[160px]">
                     <form onSubmit={handleAdd} className="flex gap-3 items-end">
                         <div className="flex-1">
                             <label className="flex justify-between items-center text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider">
-                                <span>Añadir {marketMode === 'CRYPTO' ? 'Criptomoneda' : 'Acción / Valor'}</span>
-                                <span 
-                                    className="flex items-center gap-1 cursor-pointer hover:text-indigo-600 hover:bg-indigo-50 px-1 rounded transition-all select-none" 
-                                    onClick={() => setShowSmartCommands(!showSmartCommands)}
-                                >
-                                    <BrainCircuit size={10} /> Comandos IA
-                                </span>
+                                <span>Añadir Activo (Detección Automática)</span>
+                                <span className="flex items-center gap-1 cursor-pointer hover:text-indigo-600 px-1" onClick={() => setShowSmartCommands(!showSmartCommands)}><BrainCircuit size={10} /> IA Search</span>
                             </label>
                             
-                            <div className={`absolute z-20 bg-indigo-900 text-white p-3 rounded-lg shadow-xl text-xs w-64 -mt-24 ml-10 transition-all duration-300 ${showSmartCommands ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'}`}>
-                                <div className="font-bold border-b border-indigo-700 pb-1 mb-1 flex items-center justify-between">
-                                    <span className="flex items-center gap-1"><Sparkles size={10} className="text-yellow-400"/> IA Search Commands</span>
-                                    <span className="text-[9px] font-normal text-indigo-300">(Clic para copiar)</span>
-                                </div>
+                            <div className={`absolute z-20 bg-indigo-900 text-white p-3 rounded-lg shadow-xl text-xs w-64 -mt-24 ml-10 transition-all ${showSmartCommands ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                                 <ul className="space-y-1 font-mono text-[10px]">
-                                    <li onClick={() => handleCommandClick('?')} className="cursor-pointer hover:bg-indigo-700 p-1 rounded transition-colors flex justify-between items-center group">
-                                        <span><span className="text-yellow-400 font-bold">?</span> &nbsp;&nbsp;Mejor Valor</span>
-                                        <span className="hidden group-hover:inline opacity-50">↵</span>
-                                    </li>
-                                    <li onClick={() => handleCommandClick('?+')} className="cursor-pointer hover:bg-indigo-700 p-1 rounded transition-colors flex justify-between items-center group">
-                                        <span><span className="text-yellow-400 font-bold">?+</span> &nbsp;Crecimiento Corto</span>
-                                        <span className="hidden group-hover:inline opacity-50">↵</span>
-                                    </li>
-                                    <li onClick={() => handleCommandClick('?++')} className="cursor-pointer hover:bg-indigo-700 p-1 rounded transition-colors flex justify-between items-center group">
-                                        <span><span className="text-yellow-400 font-bold">?++</span> Crecimiento Medio</span>
-                                        <span className="hidden group-hover:inline opacity-50">↵</span>
-                                    </li>
-                                    <li onClick={() => handleCommandClick('?-')} className="cursor-pointer hover:bg-indigo-700 p-1 rounded transition-colors flex justify-between items-center group">
-                                        <span><span className="text-yellow-400 font-bold">?-</span> &nbsp;Especulativo</span>
-                                        <span className="hidden group-hover:inline opacity-50">↵</span>
-                                    </li>
+                                    {['?', '?+', '?++', '?-'].map(cmd => (
+                                        <li key={cmd} onClick={() => handleCommandClick(cmd)} className="cursor-pointer hover:bg-indigo-700 p-1 rounded transition-colors flex justify-between items-center">
+                                            <span><span className="text-yellow-400 font-bold">{cmd}</span> &nbsp;{cmd === '?' ? 'Mejor Valor' : cmd === '?+' ? 'Crecimiento Corto' : cmd === '?++' ? 'Crecimiento Medio' : 'Especulativo'}</span>
+                                        </li>
+                                    ))}
                                 </ul>
                             </div>
 
                             <div className="relative">
-                                <input 
-                                    ref={inputRef}
-                                    type="text" 
-                                    value={newSymbol} 
-                                    onChange={(e) => { setNewSymbol(e.target.value); setAddError(null); setAiSuggestionData(null); }} 
-                                    placeholder={marketMode === 'CRYPTO' ? "Ej: BTC, ETH... o escribe ?" : "Ej: NVDA, TSLA... o escribe ?"}
-                                    disabled={isAdding} 
-                                    className={`w-full bg-gray-50 border ${addError ? 'border-red-300 ring-1 ring-red-100' : 'border-gray-300'} rounded p-2.5 pl-9 text-sm focus:ring-2 focus:ring-gray-900 focus:outline-none font-medium transition-all`}
-                                />
+                                <input ref={inputRef} type="text" value={newSymbol} onChange={(e) => { setNewSymbol(e.target.value); setAddError(null); setAiSuggestionData(null); }} placeholder="Símbolo (Ej: BTC, AAPL, NVDA, SOL...)" disabled={isAdding} className={`w-full bg-gray-50 border ${addError ? 'border-red-300 ring-1 ring-red-100' : 'border-gray-300'} rounded p-2.5 pl-9 text-sm focus:ring-2 focus:ring-gray-900 outline-none font-medium transition-all`}/>
                                 <Search size={16} className="absolute left-3 top-2.5 text-gray-400" />
                             </div>
                         </div>
@@ -504,103 +351,34 @@ export default function App() {
                             {isAdding ? 'BUSCANDO' : 'AÑADIR'}
                         </button>
                     </form>
-                    
-                    {addError ? (
-                        <div className="mt-2 bg-red-50 border border-red-100 text-red-700 px-3 py-2 rounded text-xs flex items-center gap-2 animate-in slide-in-from-top-1 font-medium shadow-sm">
-                            <AlertCircle size={14} className="flex-shrink-0" />
-                            <span>{addError}</span>
+                    {isAdding && !addError && !aiSuggestionData && (
+                        <div className="mt-2 bg-gray-50 text-gray-500 px-3 py-2 rounded text-xs flex items-center gap-2 font-medium shadow-sm animate-pulse">
+                            <Loader2 size={14} className="animate-spin text-red-700" />
+                            Buscando activo...
                         </div>
-                    ) : aiSuggestionData ? (
-                        <div 
-                            className="mt-2 bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-2 rounded text-xs flex items-center gap-2 animate-in slide-in-from-top-1 font-medium shadow-sm cursor-pointer hover:bg-indigo-100 transition-colors group"
-                            onClick={() => setShowAiReason(true)}
-                            title="Haz clic para saber por qué"
-                        >
-                            <Sparkles size={14} className="flex-shrink-0 text-indigo-500" />
-                            <span>IA Sugiere: {aiSuggestionData.symbol} ({aiSuggestionData.label})</span>
-                            <Info size={12} className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto text-indigo-400" />
-                        </div>
-                    ) : (
-                        <p className="mt-3 text-[10px] text-gray-400 leading-tight">
-                            * {marketMode === 'CRYPTO' ? 'Introduce el Ticker o Nombre (Binance).' : 'Introduce el Ticker de Bolsa (Yahoo Finance).'}
-                        </p>
                     )}
+                    {addError && <div className="mt-2 bg-red-50 text-red-700 px-3 py-2 rounded text-xs flex items-center gap-2 font-medium shadow-sm"><AlertCircle size={14} />{addError}</div>}
+                    {aiSuggestionData && <div className="mt-2 bg-indigo-50 text-indigo-700 px-3 py-2 rounded text-xs flex items-center gap-2 font-medium shadow-sm cursor-pointer" onClick={() => setShowAiReason(true)}><Sparkles size={14} />IA Sugiere: {aiSuggestionData.symbol}</div>}
                 </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 print:grid-cols-2 print:gap-4 items-start">
-              {visibleAssets.map((asset, index) => {
-                  return (
-                    <AssetCard 
-                        key={asset.symbol} 
-                        asset={asset} 
-                        onDelete={handleDelete} 
-                        onToggleFavorite={handleToggleFavorite}
-                        refreshTrigger={refreshTrigger} 
-                        onMove={moveAsset} 
-                        index={index} 
-                        total={visibleAssets.length}
-                        currency={currency}
-                        rate={rates[currency]}
-                        isFixed={false}
-                        apiKey={apiKey}
-                        onRequireKey={() => setShowAjustes(true)}
-                    />
-                  );
-              })}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 print:grid-cols-2 items-start">
+              {visibleAssets.map((asset, index) => (
+                <AssetCard key={`${asset.symbol}-${asset.type}`} asset={asset} onDelete={handleDelete} onToggleFavorite={handleToggleFavorite} refreshTrigger={refreshTrigger} onMove={moveAsset} index={index} total={visibleAssets.length} currency={currency} rate={rates[currency]} apiKey={apiKey} onRequireKey={() => setShowAjustes(true)} />
+              ))}
           </div>
-            
-          {visibleAssets.length === 0 && (
-                <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-lg print:hidden">
-                    <AlertCircle className="mx-auto mb-3 text-gray-300" size={40} />
-                    <p className="text-gray-500 font-medium">Lista de {marketMode === 'CRYPTO' ? 'Criptos' : 'Acciones'} vacía</p>
-                    <button onClick={handleReset} className="text-red-700 font-bold text-sm hover:underline mt-2">Cargar Lista por Defecto</button>
-                </div>
-          )}
         </div>
 
-        <div className={view === 'correlation' ? 'block' : 'hidden'}>
-          <CryptoCorrelationPro 
-            apiKey={apiKey} 
-            onRequireKey={() => setShowAjustes(true)}
-            currency={currency}
-            rate={rates[currency]}
-            availableAssets={assets}
-          />
-        </div>
+        <div className={view === 'correlation' ? 'block' : 'hidden'}><CryptoCorrelationPro apiKey={apiKey} onRequireKey={() => setShowAjustes(true)} currency={currency} rate={rates[currency]} availableAssets={assets} /></div>
+        <div className={view === 'guia' ? 'block' : 'hidden'}><Guia /></div>
 
-        <div className={view === 'guia' ? 'block' : 'hidden'}>
-          <Guia />
-        </div>
-
-        <div className="print:hidden mt-12">
-            <Footer 
-                assetCount={visibleAssets.length} 
-                userIp={userIp} 
-                onManageCookies={handleManageCookies} 
-                onManageApiKey={() => setShowAjustes(true)}
-                hasApiKey={!!apiKey}
-            />
-        </div>
+        <div className="print:hidden mt-12"><Footer assetCount={visibleAssets.length} userIp={userIp} onManageCookies={() => setShowCookies(true)} onManageApiKey={() => setShowAjustes(true)} hasApiKey={!!apiKey}/></div>
       </div>
     </div>
     
     <Cookies isOpen={showCookies} onClose={() => setShowCookies(false)} />
-    <Ajustes 
-        isOpen={showAjustes} 
-        onClose={() => setShowAjustes(false)} 
-        apiKey={apiKey}
-        onApiKeySave={handleSaveApiKey}
-        userIp={userIp}
-    />
-    {showAiReason && aiSuggestionData && (
-        <AiSuggestionModal 
-            symbol={aiSuggestionData.symbol}
-            reason={aiSuggestionData.reason}
-            criteriaLabel={aiSuggestionData.label}
-            onClose={() => setShowAiReason(false)}
-        />
-    )}
+    <Ajustes isOpen={showAjustes} onClose={() => setShowAjustes(false)} apiKey={apiKey} onApiKeySave={(key) => { setApiKey(key); handleRefreshAll(); }} userIp={userIp} />
+    {showAiReason && aiSuggestionData && <AiSuggestionModal symbol={aiSuggestionData.symbol} reason={aiSuggestionData.reason} criteriaLabel={aiSuggestionData.label} onClose={() => setShowAiReason(false)} />}
     </>
   );
 }
