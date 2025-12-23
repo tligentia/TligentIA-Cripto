@@ -15,7 +15,8 @@ import { Ajustes } from './Plantilla/Ajustes';
 import CryptoCorrelationPro from './components/CryptoCorrelationPro';
 import AiSuggestionModal from './components/AiSuggestionModal';
 import GeneralDashboard from './components/GeneralDashboard';
-import Guia from './components/Guia';
+// Fix: Use named import for Guia as it is likely a named export in its source file
+import { Guia } from './components/Guia';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

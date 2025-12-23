@@ -29,7 +29,6 @@ interface Category {
 
 // --- CONSTANTS ---
 
-// Diccionarios opcionales para mejorar la visualización de grupos conocidos del CSV
 const CATEGORY_ICONS: Record<string, string> = {
   'Wallets': '🔑',
   'DEXs': '🔄',
@@ -321,7 +320,7 @@ const ResultBox: React.FC<{
 
 // --- COMPONENTE PRINCIPAL ---
 
-const Guia: React.FC = () => {
+export const Guia: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'herramientas' | 'ia' | 'teoria'>('herramientas');
   const [aiResults, setAiResults] = useState<Record<string, { loading: boolean, text: string }>>({});
   const [expandedResults, setExpandedResults] = useState<Record<string, boolean>>({});
@@ -343,7 +342,16 @@ const Guia: React.FC = () => {
   useEffect(() => {
     const loadCsvData = async () => {
       try {
-        const response = await fetch('Recursos_Defi.csv');
+        // Usamos el endpoint de exportación de Google Sheets para obtener el CSV
+        const spreadsheetId = '19BqYHKLXXjNmZCU7DSQeqj1VKoASD1Kt4lj8Vnu1XoA';
+        const targetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv`;
+        
+        // Usamos corsproxy.io para evitar errores de CORS si ocurren
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+        
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        
         const text = await response.text();
         const lines = text.split('\n').filter(l => l.trim() !== '');
         
@@ -537,7 +545,7 @@ const Guia: React.FC = () => {
         <div className="space-y-12 animate-in slide-in-from-bottom-2 duration-500">
           <div>
             <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mb-8 flex items-center gap-3 pl-1">
-              <ListOrdered size={14} className="text-red-700" /> Directorio Dinámico (Ordinales CSV)
+              <ListOrdered size={14} className="text-red-700" /> Directorio Dinámico (Google Sheets)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
               {categories.map((cat) => (
@@ -640,5 +648,3 @@ const Guia: React.FC = () => {
     </div>
   );
 };
-
-export default Guia;
