@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart3, Database, Sparkles, RefreshCw, Search, Plus, Loader2, AlertCircle, Activity, BrainCircuit, LayoutGrid } from 'lucide-react';
 import { Asset, CurrencyCode, AssetType } from './types';
@@ -15,8 +14,8 @@ import { Ajustes } from './Plantilla/Ajustes';
 import CryptoCorrelationPro from './components/CryptoCorrelationPro';
 import AiSuggestionModal from './components/AiSuggestionModal';
 import GeneralDashboard from './components/GeneralDashboard';
-// Fix: Use named import for Guia as it is likely a named export in its source file
 import { Guia } from './components/Guia';
+import { AppMenu } from './Plantilla/AppMenu';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -102,10 +101,6 @@ export default function App() {
       getRates();
   }, [refreshTrigger]);
 
-  /**
-   * EFECTO DE SCROLL UNIVERSAL
-   * Se dispara cuando scrollToSymbol tiene un valor.
-   */
   useEffect(() => {
     if (scrollToSymbol) {
         const timer = setTimeout(() => {
@@ -212,7 +207,6 @@ export default function App() {
         const inTopStocks = foundAsset.type === 'STOCK' && TOP_STOCKS.some(t => t.symbol === foundAsset.symbol);
 
         if (alreadyExists || inTopStocks) { 
-            // Si ya existe, simplemente hacemos scroll hacia él
             setScrollToSymbol(foundAsset.symbol);
             setNewSymbol('');
             setAddError(null);
@@ -271,18 +265,21 @@ export default function App() {
                 </p>
             </div>
             <div className="flex flex-col items-end gap-2">
-                 <div className="flex items-center gap-2 text-xs bg-white px-3 py-1.5 rounded border border-gray-200 shadow-sm">
-                    <input 
-                        type="checkbox" 
-                        checked={autoRefreshEnabled} 
-                        onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
-                        className="w-3.5 h-3.5 rounded border-gray-300 text-red-700 focus:ring-red-500 cursor-pointer"
-                        title="Auto-refresco (30s)"
-                    />
-                    <span className="text-gray-500">Sincro:</span>
-                    <span className="font-mono font-bold text-gray-900">{lastUpdate.toLocaleTimeString()}</span>
-                    <div className="h-3 w-px bg-gray-300 mx-1"></div>
-                    <button onClick={handleRefreshAll} className="text-gray-500 hover:text-indigo-600 p-1 -my-1 rounded transition-all"><RefreshCw size={14} /></button>
+                 <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-xs bg-white px-3 py-1.5 rounded border border-gray-200 shadow-sm">
+                        <input 
+                            type="checkbox" 
+                            checked={autoRefreshEnabled} 
+                            onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+                            className="w-3.5 h-3.5 rounded border-gray-300 text-red-700 focus:ring-red-500 cursor-pointer"
+                            title="Auto-refresco (30s)"
+                        />
+                        <span className="text-gray-500">Sincro:</span>
+                        <span className="font-mono font-bold text-gray-900">{lastUpdate.toLocaleTimeString()}</span>
+                        <div className="h-3 w-px bg-gray-300 mx-1"></div>
+                        <button onClick={handleRefreshAll} className="text-gray-500 hover:text-indigo-600 p-1 -my-1 rounded transition-all"><RefreshCw size={14} /></button>
+                    </div>
+                    <AppMenu />
                  </div>
 
                  <div className="flex gap-3 items-center">
