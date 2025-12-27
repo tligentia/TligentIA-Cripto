@@ -29,7 +29,7 @@ export const Shell: React.FC<ShellProps> = ({ children, apiKey, onApiKeySave, us
         <div>
           <h1 className="text-3xl font-black tracking-tighter text-gray-900 flex items-center gap-2">
             <BarChart3 className="text-red-700" size={32} />
-            Hello<span className="text-red-700"> !!</span>
+            Cripto <span className="text-red-700">GO</span>
           </h1>
           <div className="flex items-center gap-4 mt-1">
             <div className="flex items-center gap-1.5">
