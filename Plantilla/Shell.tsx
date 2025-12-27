@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { BarChart3, Database, Sparkles, HelpCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { COLORS } from './Parameters';
-// Fixed: Footer is a default export, not a named export
+// Fixed import for default export
 import Footer from './Footer';
 import { Cookies } from './Cookies';
 import { Ajustes } from './Ajustes';
@@ -67,7 +68,6 @@ export const Shell: React.FC<ShellProps> = ({ children, apiKey, onApiKeySave, us
       <main className="flex-1 max-w-7xl mx-auto w-full">{children}</main>
 
       {/* FOOTER */}
-      {/* Fixed: Updated prop names and added missing required props for Footer */}
       <Footer 
         assetCount={0}
         userIp={userIp} 

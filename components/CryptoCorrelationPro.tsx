@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Brain, Search, RefreshCw, ArrowRightLeft, Info, BarChart3, Loader2, AlertCircle, Layers, ChevronDown, ChevronUp, Droplets, Target, Calculator, MousePointerClick, ArrowUpDown, ShieldCheck, Zap, AlertTriangle, Flame } from 'lucide-react';
@@ -6,6 +7,8 @@ import { CURRENCIES, TOP_STOCKS } from '../constants';
 import { Asset } from '../types';
 import PearsonModal from './PearsonModal';
 import StrategyModal from './StrategyModal';
+// Import GoogleGenAI SDK
+import { GoogleGenAI } from "@google/genai";
 
 // --- CONFIGURACIÓN & UTILIDADES ---
 
@@ -478,31 +481,20 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
       ${customQuery.trim() ? '4. RESPUESTA A LA CONSULTA DEL USUARIO.' : ''}
     `;
 
+    // Refactored to use @google/genai SDK
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        }
-      );
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+      });
       
-      if (!response.ok) {
-           const errText = await response.text();
-           // Check for key errors or permission errors
-           if (response.status === 400 || response.status === 403) {
-               onRequireKey();
-               throw new Error("API_KEY_INVALID");
-           }
-           throw new Error(errText);
-      }
-
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No se pudo generar el análisis.";
+      const text = response.text || "No se pudo generar el análisis.";
       setAiAnalysis(text);
-    } catch (error) {
-      if (String(error).includes('API_KEY_INVALID')) {
+    } catch (error: any) {
+      console.error("Gemini Error:", error);
+      if (error.message?.includes('400') || error.message?.includes('403')) {
+          onRequireKey();
           setAiAnalysis("⚠️ API Key inválida.");
       } else {
           setAiAnalysis("Error de conexión con Gemini.");

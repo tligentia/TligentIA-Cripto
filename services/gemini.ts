@@ -1,8 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 
+/**
+ * Obtiene el modelo preferido del almacenamiento local o el predeterminado.
+ */
+const getPreferredModel = () => localStorage.getItem('app_selected_model') || 'gemini-3-flash-preview';
+
 export const generateGeminiContent = async (prompt: string, userApiKey?: string): Promise<string> => {
-  // Priorizar la clave del usuario, luego la del entorno
-  const keyToUse = userApiKey || process.env.API_KEY || '';
+  const keyToUse = userApiKey || localStorage.getItem('app_apikey') || process.env.API_KEY || '';
 
   if (!keyToUse) {
     throw new Error("API_MISSING");
@@ -10,9 +14,8 @@ export const generateGeminiContent = async (prompt: string, userApiKey?: string)
 
   try {
     const ai = new GoogleGenAI({ apiKey: keyToUse });
-    
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: getPreferredModel(),
       contents: prompt,
     });
     return response.text || "No se pudo generar una respuesta.";
@@ -52,37 +55,24 @@ export const getSmartRecommendation = async (
     const prompt = `
       Actúa como un experto broker financiero algorítmico especializado en "Momentum Trading" y "Breakouts".
       Mercado: ${context}.
-      
-      DIRECTRIZ OBLIGATORIA:
-      Propon SIEMPRE valores en ALZA PRONUNCIADA y que se dirijan a MÁXIMOS (All-Time Highs o 52-week Highs).
-      Descarta activos en rango, bajistas, o "baratos". Queremos fuerza relativa y velocidad.
-      
-      TAREA: Recomienda UN ÚNICO Ticker/Símbolo para este criterio: "${criteria}".
+      DIRECTRIZ: Propon SIEMPRE valores en ALZA PRONUNCIADA hacia MÁXIMOS.
+      TAREA: Recomienda UN ÚNICO Ticker para este criterio: "${criteria}".
       ${excludedText}
-      
-      REGLAS ESTRICTAS DE FORMATO (JSON):
-      Debes responder ÚNICAMENTE con un objeto JSON válido. No uses bloques de código markdown.
-      Estructura:
-      {
-        "symbol": "TICKER",
-        "reason": "Explicación técnica breve (máx 40 palabras) destacando la ruptura de máximos o la fuerza de la tendencia."
-      }
+      FORMATO JSON: {"symbol": "TICKER", "reason": "Explica brevemente (máx 30 palabras)"}
     `;
 
     try {
         const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: getPreferredModel(),
             contents: prompt,
+            config: { responseMimeType: "application/json" }
         });
         
-        const text = response.text?.trim() || "";
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const data = JSON.parse(jsonStr);
-        
+        const data = JSON.parse(response.text || "{}");
         return {
-            symbol: data.symbol.toUpperCase().replace(/\./g, '').trim(),
-            reason: data.reason
+            symbol: (data.symbol || "").toUpperCase().replace(/\./g, '').trim(),
+            reason: data.reason || ""
         };
     } catch (error) {
         console.error("Smart Search Error", error);
