@@ -46,7 +46,8 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
       const models = await listAvailableModels();
       setAvailableModels(models);
       
-      if (!selectedModel || !models.includes(selectedModel)) {
+      const currentSelected = localStorage.getItem('app_selected_model');
+      if (!currentSelected || !models.includes(currentSelected)) {
         const optimal = models.find(m => m === 'gemini-3-flash-preview') || 
                         models.find(m => m.includes('flash-preview')) || 
                         models.find(m => m.includes('flash')) || 
@@ -56,6 +57,8 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
           setSelectedModel(optimal);
           localStorage.setItem('app_selected_model', optimal);
         }
+      } else {
+          setSelectedModel(currentSelected);
       }
     } catch (e) {
       console.error("Failed loading models", e);
@@ -65,13 +68,16 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
   };
 
   const handleConfigCheck = async (keyToValidate: string) => {
+    if (!keyToValidate) {
+        setStatus('idle');
+        return;
+    }
     setIsValidating(true);
     const ok = await validateKey(keyToValidate);
     setStatus(ok ? 'success' : 'error');
     if (ok) {
       await loadModels();
     } else {
-      // Intentar cargar modelos de todos modos para que el selector no esté vacío si la key falla por un ping lento
       const models = await listAvailableModels();
       setAvailableModels(models);
     }
@@ -91,7 +97,6 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
       handleConfigCheck(shortcut);
     } else {
       onApiKeySave(val);
-      // No validamos en cada pulsación para evitar saturación de API, el usuario puede pulsar refresh
     }
     setStatus('idle');
   };

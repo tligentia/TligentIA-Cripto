@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Asset, CurrencyCode, AssetType, CurrencyConfig } from './types';
 import { COLORS, DEFAULT_ASSETS, TOP_STOCKS, CURRENCIES, getAllowedIps, validateKey } from './Plantilla/Parameters';
@@ -13,7 +12,6 @@ import CryptoCorrelationPro from './components/CryptoCorrelationPro';
 import AiSuggestionModal from './components/AiSuggestionModal';
 import GeneralDashboard from './components/GeneralDashboard';
 import { Guia } from './components/Guia';
-// Added LayoutGrid to imports to fix the error in line 191
 import { Loader2, Search, Plus, BrainCircuit, Sparkles, AlertCircle, LayoutGrid } from 'lucide-react';
 
 export default function App() {
@@ -55,7 +53,6 @@ export default function App() {
   const [addError, setAddError] = useState<string | null>(null);
   const [aiSuggestionData, setAiSuggestionData] = useState<{symbol: string, reason: string, label: string} | null>(null);
   const [isAdding, setIsAdding] = useState(false);
-  const [showSmartCommands, setShowSmartCommands] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // IP Fetching
@@ -71,15 +68,27 @@ export default function App() {
       .catch(e => console.error("IP check failed", e));
   }, []);
 
-  // Validation of Key
+  // Validation of Key & Auto-selection of AI Engine
   useEffect(() => {
     const check = async () => {
-      if (!apiKey) {
+      // Priorizar la clave de localStorage si existe
+      const keyToTest = apiKey || localStorage.getItem('app_apikey') || process.env.API_KEY;
+      
+      if (!keyToTest) {
         setIsKeyValid(false);
         return;
       }
-      const valid = await validateKey();
+
+      setIsKeyValid(null); // Estado de carga (Syncing)
+      const valid = await validateKey(keyToTest);
       setIsKeyValid(valid);
+
+      if (valid) {
+        // Autoselección de modelo si no hay ninguno
+        if (!localStorage.getItem('app_selected_model')) {
+          localStorage.setItem('app_selected_model', 'gemini-3-flash-preview');
+        }
+      }
     };
     check();
   }, [apiKey]);
@@ -92,7 +101,7 @@ export default function App() {
   const handleApiKeySave = (key: string) => {
     setApiKey(key);
     localStorage.setItem('app_apikey', key);
-    setRefreshTrigger(prev => prev + 1);
+    // El useEffect superior se encargará de revalidar
   };
 
   useEffect(() => { localStorage.setItem('criptogo_real_assets', JSON.stringify(assets)); }, [assets]);
