@@ -7,7 +7,8 @@ import { getSmartRecommendation } from './services/gemini';
 import AssetCard from './components/AssetCard';
 import FearGreedWidget from './components/FearGreedWidget';
 import VixWidget from './components/VixWidget';
-import { Seguridad } from './Plantilla/Seguridad';
+// Fixed import: Segurança was exported as Security in the source file
+import { Security } from './Plantilla/Seguridad';
 import Footer from './Plantilla/Footer';
 import { Cookies } from './Plantilla/Cookies';
 import { Ajustes } from './Plantilla/Ajustes';
@@ -249,7 +250,8 @@ export default function App() {
 
   return (
     <>
-    {!isAuthenticated && <Seguridad onLoginSuccess={() => setIsAuthenticated(true)} />}
+    {/* Fixed component usage: Security uses onLogin prop */}
+    {!isAuthenticated && <Security onLogin={() => setIsAuthenticated(true)} />}
     <div className={`min-h-screen ${COLORS.bg} font-sans text-gray-900 p-4 md:p-8 print:bg-white print:p-0 ${!isAuthenticated ? 'blur-sm pointer-events-none' : ''}`}>
       <div className="max-w-7xl mx-auto print:max-w-none">
         

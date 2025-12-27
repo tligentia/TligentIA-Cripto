@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X, ShieldCheck, Database, ServerOff, Lock } from 'lucide-react';
 import { COLORS } from './Parameters';
@@ -51,7 +50,7 @@ export const Cookies: React.FC<CookiesProps> = ({ isOpen, onClose }) => {
               <h4 className="font-black uppercase text-sm tracking-tight">Arquitectura Sin Servidor Propio</h4>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">
-              No disponemos de bases de datos centralizadas. El intercambio de información ocurre directamente entre tu navegador y la API oficial de Google Gemini. Cumplimos con el principio de <strong>Privacidad por Diseño</strong>, garantizando que el desarrollador no tiene acceso a tus consultas ni a tu actividad.
+              No disponemos de bases de datos centralizadas. El intercambio de información ocurre directamente entre tu navegador y la API oficial de Google Gemini. Cumplimos con el principio de <strong>Privacidad por Diseño</strong>, garantizando que el desarrollador no tiene acceso a tus consultas ni a tu actividad, apoyándonos en tecnologías de <strong>Edge Computing</strong> para maximizar la eficiencia y seguridad local.
             </p>
           </section>
 

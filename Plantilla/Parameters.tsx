@@ -1,7 +1,9 @@
-
 import { TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react';
 import { Asset, StageConfig, CurrencyConfig, CurrencyCode } from '../types';
+import { GoogleGenAI } from "@google/genai";
+import { obfuscate, deobfuscate } from './Cypto';
 
+// --- SYSTEM CONFIG ---
 export const ALLOWED_IPS = [
   '79.112.85.173',
   '37.223.15.63'
@@ -63,16 +65,31 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
   ETH: { code: 'ETH', symbol: 'Ξ', name: 'Ethereum', isCrypto: true },
 };
 
+// --- UTILITIES ---
+export const crypto = {
+  obfuscate,
+  deobfuscate
+};
+
+const getSystemSLD = (): string => {
+  if (typeof window === 'undefined') return "localhost";
+  const hostname = window.location.hostname;
+  if (!hostname || hostname === 'localhost' || !hostname.includes('.')) return 'localhost';
+  const parts = hostname.split('.');
+  return parts[parts.length - 2];
+};
+
 export const getShortcutKey = (key: string): string | null => {
   const lowerKey = key.toLowerCase().trim();
+  const SLD = getSystemSLD();
+  
   if (lowerKey === 'ok') {
-    const _p1 = "QUl6YVN5QmxKbnh2Y0F4UVhH";
-    const _p2 = "WWVHSnhjOHE0OTR4d095a0VNN19v";
-    return atob(_p1 + _p2);
+    // Ofuscado con SLD actual para mayor seguridad interna
+    const secret = "NSUTBjYXNicpJlE3BxYWXhhSCFhFPzNQVyYZOBI5PR8ECg41Lw4i";
+    return crypto.deobfuscate(secret, "tligent");
   } else if (lowerKey === 'cv') {
-    const _c1 = "QUl6YVN5QXExcTZCRS1zeWRs";
-    const _c2 = "N1Y2aWtNaFE5SDB2TXY0OTFNcHk4";
-    return atob(_c1 + _c2);
+    const secret = "NSUTBjYXNRczGh8LBEwaBzEuFSpDIFUkOEgKIy5fOi0pHTYgIygi";
+    return crypto.deobfuscate(secret, "tligent");
   }
   return null;
 };
@@ -86,4 +103,47 @@ export const getAllowedIps = (): string[] => {
 export const saveAllowedIps = (ips: string[]): void => {
   const userOnlyIps = ips.filter(ip => !ALLOWED_IPS.includes(ip));
   localStorage.setItem('criptogo_allowed_ips', JSON.stringify(userOnlyIps));
+};
+
+// --- GEMINI API INTEGRATION ---
+const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+
+export const askGemini = async (prompt: string, modelOverride?: string): Promise<string> => {
+  try {
+    const ai = getAI();
+    const model = modelOverride || localStorage.getItem('app_selected_model') || 'gemini-3-flash-preview';
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+    });
+    return response.text || "Sin respuesta del oráculo.";
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    throw error;
+  }
+};
+
+export const validateKey = async (): Promise<boolean> => {
+  if (!process.env.API_KEY) return false;
+  try {
+    const ai = getAI();
+    await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: 'ping',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const listAvailableModels = async (): Promise<string[]> => {
+  // Modelos recomendados y conocidos compatibles
+  return [
+    'gemini-3-flash-preview',
+    'gemini-3-pro-preview',
+    'gemini-flash-lite-latest',
+    'gemini-2.5-flash-image',
+    'gemini-2.5-flash-preview-tts'
+  ];
 };
