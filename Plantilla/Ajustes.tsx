@@ -38,7 +38,6 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
 
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const isAuthorized = !hostname || hostname === 'localhost' || hostname === 'hello.tligent.com';
-  // Fixed: Added required key argument "tligent"
   const isCurrentIpMemorized = userIp ? memorizedIps.includes(crypto.obfuscate(userIp, "tligent")) : false;
 
   const loadModels = async () => {
@@ -47,7 +46,6 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
       const models = await listAvailableModels();
       setAvailableModels(models);
       
-      // Lógica de pre-selección optimizada: Multimodal + Flash + Reciente
       if (!selectedModel || !models.includes(selectedModel)) {
         const optimal = models.find(m => m === 'gemini-3-flash-preview') || 
                         models.find(m => m.includes('flash-preview')) || 
@@ -66,27 +64,34 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
     }
   };
 
-  const handleConfigCheck = async () => {
+  const handleConfigCheck = async (keyToValidate: string) => {
     setIsValidating(true);
-    const ok = await validateKey();
+    const ok = await validateKey(keyToValidate);
     setStatus(ok ? 'success' : 'error');
-    if (ok) await loadModels();
+    if (ok) {
+      await loadModels();
+    } else {
+      // Intentar cargar modelos de todos modos para que el selector no esté vacío si la key falla por un ping lento
+      const models = await listAvailableModels();
+      setAvailableModels(models);
+    }
     setIsValidating(false);
   };
 
   useEffect(() => {
     if (isOpen) {
-      handleConfigCheck();
+      handleConfigCheck(apiKey);
     }
-  }, [isOpen]);
+  }, [isOpen, apiKey]);
 
   const handleKeyChange = (val: string) => {
     const shortcut = getShortcutKey(val);
     if (shortcut) {
       onApiKeySave(shortcut);
-      setTimeout(() => handleConfigCheck(), 100);
+      handleConfigCheck(shortcut);
     } else {
       onApiKeySave(val);
+      // No validamos en cada pulsación para evitar saturación de API, el usuario puede pulsar refresh
     }
     setStatus('idle');
   };
@@ -99,7 +104,6 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
 
   const handleMemorizeIp = () => {
     if (!userIp) return;
-    // Fixed: Added required key argument "tligent"
     const obfuscated = crypto.obfuscate(userIp, "tligent");
     if (!memorizedIps.includes(obfuscated)) {
       const newList = [...memorizedIps, obfuscated];
@@ -112,7 +116,7 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
     if (!aiQuestion.trim() || isAsking) return;
     setIsAsking(true);
     try {
-      const res = await askGemini(aiQuestion, selectedModel);
+      const res = await askGemini(aiQuestion, selectedModel, apiKey);
       setAiAnswer(res);
     } catch (e: any) {
       setAiAnswer(`System Error: ${e.message}`);
@@ -193,11 +197,6 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
                   <ChevronDown size={16} />
                 </div>
               </div>
-              {selectedModel.includes('flash') && (
-                <p className="text-[8px] font-black text-red-700 uppercase tracking-widest ml-1 animate-pulse">
-                  Motor Flash Activo: Multimodal & Low Latency
-                </p>
-              )}
             </div>
           </div>
 
@@ -207,10 +206,10 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
                <div className="flex items-center gap-3">
                  <div className={`w-2.5 h-2.5 rounded-full ${status === 'success' ? 'bg-green-500 animate-pulse' : status === 'error' ? 'bg-red-500' : 'bg-gray-200'}`}></div>
                  <span className="text-[9px] font-black text-gray-900 uppercase tracking-widest">
-                   {status === 'success' ? 'Sync OK' : status === 'error' ? 'Key Error' : 'Idle'}
+                   {status === 'success' ? 'AI ONLINE' : status === 'error' ? 'KEY ERROR' : 'IDLE'}
                  </span>
                </div>
-               <button onClick={handleConfigCheck} disabled={isValidating} className="text-gray-400 hover:text-red-700 transition-all active:rotate-180">
+               <button onClick={() => handleConfigCheck(apiKey)} disabled={isValidating} className="text-gray-400 hover:text-red-700 transition-all active:rotate-180">
                  {isValidating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCcw size={14} />}
                </button>
              </div>
@@ -223,7 +222,7 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
              )}
           </div>
 
-          {/* MEMORIZAR IP (REDUCIDO) */}
+          {/* MEMORIZAR IP */}
           <section className="bg-gray-50/50 border border-gray-100 p-4 rounded-3xl space-y-3">
              <div className="flex items-center justify-between px-1">
                 <label className="text-[9px] font-black uppercase tracking-widest text-gray-900 flex items-center gap-2">

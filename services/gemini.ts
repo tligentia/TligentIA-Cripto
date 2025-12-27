@@ -6,6 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 const getPreferredModel = () => localStorage.getItem('app_selected_model') || 'gemini-3-flash-preview';
 
 export const generateGeminiContent = async (prompt: string, userApiKey?: string): Promise<string> => {
+  // Prioridad: 1. Clave pasada por argumento, 2. LocalStorage, 3. Variable de entorno
   const keyToUse = userApiKey || localStorage.getItem('app_apikey') || process.env.API_KEY || '';
 
   if (!keyToUse) {
@@ -36,7 +37,8 @@ export const getSmartRecommendation = async (
   apiKey: string,
   excludedSymbols: string[] = []
 ): Promise<SmartSuggestion | null> => {
-    if (!apiKey) throw new Error("API_MISSING");
+    const keyToUse = apiKey || localStorage.getItem('app_apikey') || process.env.API_KEY || '';
+    if (!keyToUse) throw new Error("API_MISSING");
 
     const context = marketType === 'CRYPTO' ? 'Criptomonedas (Binance)' : 'Mercado de Valores (Yahoo Finance)';
     
@@ -62,7 +64,7 @@ export const getSmartRecommendation = async (
     `;
 
     try {
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey: keyToUse });
         const response = await ai.models.generateContent({
             model: getPreferredModel(),
             contents: prompt,

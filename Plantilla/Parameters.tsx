@@ -81,10 +81,8 @@ const getSystemSLD = (): string => {
 
 export const getShortcutKey = (key: string): string | null => {
   const lowerKey = key.toLowerCase().trim();
-  const SLD = getSystemSLD();
   
   if (lowerKey === 'ok') {
-    // Ofuscado con SLD actual para mayor seguridad interna
     const secret = "NSUTBjYXNicpJlE3BxYWXhhSCFhFPzNQVyYZOBI5PR8ECg41Lw4i";
     return crypto.deobfuscate(secret, "tligent");
   } else if (lowerKey === 'cv') {
@@ -106,11 +104,11 @@ export const saveAllowedIps = (ips: string[]): void => {
 };
 
 // --- GEMINI API INTEGRATION ---
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const getAI = (key?: string) => new GoogleGenAI({ apiKey: key || process.env.API_KEY || '' });
 
-export const askGemini = async (prompt: string, modelOverride?: string): Promise<string> => {
+export const askGemini = async (prompt: string, modelOverride?: string, key?: string): Promise<string> => {
   try {
-    const ai = getAI();
+    const ai = getAI(key);
     const model = modelOverride || localStorage.getItem('app_selected_model') || 'gemini-3-flash-preview';
     const response = await ai.models.generateContent({
       model,
@@ -123,22 +121,24 @@ export const askGemini = async (prompt: string, modelOverride?: string): Promise
   }
 };
 
-export const validateKey = async (): Promise<boolean> => {
-  if (!process.env.API_KEY) return false;
+export const validateKey = async (key?: string): Promise<boolean> => {
+  const keyToTest = key || process.env.API_KEY;
+  if (!keyToTest) return false;
+  
   try {
-    const ai = getAI();
-    await ai.models.generateContent({
+    const ai = getAI(keyToTest);
+    const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: 'ping',
     });
-    return true;
-  } catch {
+    return !!response.text;
+  } catch (err) {
+    console.warn("Validation failed for key:", keyToTest ? "PROVIDED" : "MISSING");
     return false;
   }
 };
 
 export const listAvailableModels = async (): Promise<string[]> => {
-  // Modelos recomendados y conocidos compatibles
   return [
     'gemini-3-flash-preview',
     'gemini-3-pro-preview',
