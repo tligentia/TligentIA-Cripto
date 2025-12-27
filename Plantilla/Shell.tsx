@@ -1,8 +1,6 @@
-
 import React, { useState } from 'react';
-import { BarChart3, Database, Sparkles, HelpCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { BarChart3, Sparkles, HelpCircle, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { COLORS } from './Parameters';
-// Fixed import for default export
 import Footer from './Footer';
 import { Cookies } from './Cookies';
 import { Ajustes } from './Ajustes';
@@ -17,7 +15,13 @@ interface ShellProps {
   isKeyValid?: boolean | null;
 }
 
-export const Shell: React.FC<ShellProps> = ({ children, apiKey, onApiKeySave, userIp, isKeyValid }) => {
+export const Shell: React.FC<ShellProps> = ({ 
+  children, 
+  apiKey, 
+  onApiKeySave, 
+  userIp, 
+  isKeyValid
+}) => {
   const [showAjustes, setShowAjustes] = useState(false);
   const [showCookies, setShowCookies] = useState(false);
   const [showManual, setShowManual] = useState(false);
@@ -32,7 +36,8 @@ export const Shell: React.FC<ShellProps> = ({ children, apiKey, onApiKeySave, us
             Cripto <span className="text-red-700">GO</span>
           </h1>
           <div className="flex items-center gap-4 mt-1">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center">
+              {/* IA Status Badge */}
               {isKeyValid === true ? (
                 <span className="flex items-center gap-1 text-[9px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-2 py-0.5 rounded-md border border-green-100 animate-in fade-in zoom-in">
                   <CheckCircle2 size={10} /> AI ONLINE

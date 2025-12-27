@@ -22,6 +22,8 @@ export default function App() {
   const [view, setView] = useState<'overview' | 'dashboard' | 'correlation' | 'guia'>('overview');
   const [scrollToSymbol, setScrollToSymbol] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [autoRefresh, setAutoRefresh] = useState(true);
   
   const [apiKey, setApiKey] = useState<string>(() => {
       const stored = localStorage.getItem('app_apikey');
@@ -55,6 +57,16 @@ export default function App() {
   const [isAdding, setIsAdding] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-refresh logic (Set to 60 seconds as requested)
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(() => {
+      setRefreshTrigger(prev => prev + 1);
+      setLastUpdate(new Date());
+    }, 60000); 
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
+
   // IP Fetching
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
@@ -68,27 +80,15 @@ export default function App() {
       .catch(e => console.error("IP check failed", e));
   }, []);
 
-  // Validation of Key & Auto-selection of AI Engine
+  // Validation of Key
   useEffect(() => {
     const check = async () => {
-      // Priorizar la clave de localStorage si existe
-      const keyToTest = apiKey || localStorage.getItem('app_apikey') || process.env.API_KEY;
-      
-      if (!keyToTest) {
+      if (!apiKey) {
         setIsKeyValid(false);
         return;
       }
-
-      setIsKeyValid(null); // Estado de carga (Syncing)
-      const valid = await validateKey(keyToTest);
+      const valid = await validateKey(apiKey);
       setIsKeyValid(valid);
-
-      if (valid) {
-        // Autoselección de modelo si no hay ninguno
-        if (!localStorage.getItem('app_selected_model')) {
-          localStorage.setItem('app_selected_model', 'gemini-3-flash-preview');
-        }
-      }
     };
     check();
   }, [apiKey]);
@@ -101,7 +101,12 @@ export default function App() {
   const handleApiKeySave = (key: string) => {
     setApiKey(key);
     localStorage.setItem('app_apikey', key);
-    // El useEffect superior se encargará de revalidar
+    handleManualRefresh();
+  };
+
+  const handleManualRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+    setLastUpdate(new Date());
   };
 
   useEffect(() => { localStorage.setItem('criptogo_real_assets', JSON.stringify(assets)); }, [assets]);
@@ -234,6 +239,10 @@ export default function App() {
                 }}
                 onWidgetClick={handleWidgetNavigation}
                 refreshTrigger={refreshTrigger}
+                lastUpdate={lastUpdate}
+                autoRefresh={autoRefresh}
+                onToggleAutoRefresh={() => setAutoRefresh(!autoRefresh)}
+                onManualRefresh={handleManualRefresh}
             />
         )}
 

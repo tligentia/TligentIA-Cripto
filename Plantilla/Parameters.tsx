@@ -104,7 +104,7 @@ export const saveAllowedIps = (ips: string[]): void => {
 };
 
 // --- GEMINI API INTEGRATION ---
-const getAI = (key?: string) => new GoogleGenAI({ apiKey: key || localStorage.getItem('app_apikey') || process.env.API_KEY || '' });
+const getAI = (key?: string) => new GoogleGenAI({ apiKey: key || process.env.API_KEY || '' });
 
 export const askGemini = async (prompt: string, modelOverride?: string, key?: string): Promise<string> => {
   try {
@@ -122,19 +122,18 @@ export const askGemini = async (prompt: string, modelOverride?: string, key?: st
 };
 
 export const validateKey = async (key?: string): Promise<boolean> => {
-  const keyToTest = key || localStorage.getItem('app_apikey') || process.env.API_KEY;
+  const keyToTest = key || process.env.API_KEY;
   if (!keyToTest) return false;
   
   try {
-    const ai = new GoogleGenAI({ apiKey: keyToTest });
-    // Usamos una operación ligera para validar la clave
+    const ai = getAI(keyToTest);
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: 'ping',
     });
     return !!response.text;
   } catch (err) {
-    console.warn("Key validation failed");
+    console.warn("Validation failed for key:", keyToTest ? "PROVIDED" : "MISSING");
     return false;
   }
 };
