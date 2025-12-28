@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { Asset, CurrencyCode, TimeRange } from '../types';
 import DashboardWidget from './DashboardWidget';
 
@@ -47,57 +47,50 @@ const GeneralDashboard: React.FC<Props> = ({
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-8 gap-6">
-         <div className="flex items-start gap-4">
-            <div className="p-4 bg-gray-900 rounded-[1.5rem] text-white shadow-2xl shadow-black/10">
-                <LayoutGrid size={28} />
-            </div>
-            <div className="space-y-2">
-                <h2 className="text-3xl font-black text-gray-900 leading-none tracking-tighter uppercase">Dashboard General</h2>
-                
-                {lastUpdate && (
-                  <div className="flex items-center gap-5 animate-in fade-in slide-in-from-top-1 duration-300 bg-white/50 py-1 px-3 rounded-full border border-gray-100 shadow-sm w-fit">
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
-                        <span className="relative flex h-2 w-2">
-                            {autoRefresh && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-                            <span className={`relative inline-flex rounded-full h-2 w-2 ${autoRefresh ? 'bg-emerald-500' : 'bg-gray-300'}`}></span>
-                        </span>
-                        {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </p>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-6">
+         <div className="flex items-center">
+            {lastUpdate && (
+              <div className="flex items-center gap-5 animate-in fade-in slide-in-from-top-1 duration-300 bg-white/50 py-1 px-3 rounded-full border border-gray-100 shadow-sm w-fit">
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                        {autoRefresh && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${autoRefresh ? 'bg-emerald-500' : 'bg-gray-300'}`}></span>
+                    </span>
+                    {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </p>
 
-                    <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer group select-none">
-                        <div className="relative flex items-center">
-                          <input 
-                            type="checkbox" 
-                            checked={autoRefresh} 
-                            onChange={onToggleAutoRefresh}
-                            className="sr-only" 
-                          />
-                          <div className={`w-4 h-4 border-2 rounded-md transition-all flex items-center justify-center ${autoRefresh ? 'bg-emerald-600 border-emerald-600 shadow-sm' : 'bg-white border-gray-300 group-hover:border-gray-900'}`}>
-                            {autoRefresh && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                          </div>
-                        </div>
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${autoRefresh ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-700'}`}>
-                          Auto
-                        </span>
-                      </label>
-
-                      <div className="w-px h-3 bg-gray-200"></div>
-
-                      <button 
-                          onClick={onManualRefresh}
-                          className="p-1 text-gray-400 hover:text-red-700 transition-all active:rotate-180 flex items-center justify-center"
-                          title="Refrescar datos ahora"
-                      >
-                          <RefreshCw size={14} className={autoRefresh ? 'animate-spin-slow' : ''} />
-                      </button>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer group select-none">
+                    <div className="relative flex items-center">
+                      <input 
+                        type="checkbox" 
+                        checked={autoRefresh} 
+                        onChange={onToggleAutoRefresh}
+                        className="sr-only" 
+                      />
+                      <div className={`w-4 h-4 border-2 rounded-md transition-all flex items-center justify-center ${autoRefresh ? 'bg-emerald-600 border-emerald-600 shadow-sm' : 'bg-white border-gray-300 group-hover:border-gray-900'}`}>
+                        {autoRefresh && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                      </div>
                     </div>
-                  </div>
-                )}
-            </div>
+                    <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${autoRefresh ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-700'}`}>
+                      Auto
+                    </span>
+                  </label>
+
+                  <div className="w-px h-3 bg-gray-200"></div>
+
+                  <button 
+                      onClick={onManualRefresh}
+                      className="p-1 text-gray-400 hover:text-red-700 transition-all active:rotate-180 flex items-center justify-center"
+                      title="Refrescar datos ahora"
+                  >
+                      <RefreshCw size={14} className={autoRefresh ? 'animate-spin-slow' : ''} />
+                  </button>
+                </div>
+              </div>
+            )}
          </div>
-         <div className="flex items-center gap-4 pt-1">
+         <div className="flex items-center gap-4">
             <div className="flex bg-gray-100 p-1.5 rounded-[1.2rem] gap-1 overflow-x-auto shadow-inner border border-gray-200/50 scrollbar-hide">
                 {ranges.map((range) => (
                     <button
