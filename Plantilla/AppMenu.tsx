@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LayoutGrid, Inbox, ArrowUpRight, Loader2 } from 'lucide-react';
+import { AUTHORIZED_DOMAIN } from './Parameters';
 
 // --- TYPES ---
 export interface AppItem {
@@ -99,7 +100,7 @@ export const AppMenu: React.FC = () => {
   
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const isDevMode = !hostname || hostname === 'localhost';
-  const isAuthorized = isDevMode || hostname === 'hello.tligent.com';
+  const isAuthorized = isDevMode || hostname === AUTHORIZED_DOMAIN;
 
   useEffect(() => {
     fetchAppData().then(data => {

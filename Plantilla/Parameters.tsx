@@ -4,6 +4,8 @@ import { GoogleGenAI } from "@google/genai";
 import { obfuscate, deobfuscate } from './Cypto';
 
 // --- SYSTEM CONFIG ---
+export const AUTHORIZED_DOMAIN = 'hello.tligent.com';
+
 export const ALLOWED_IPS = [
   '79.112.85.173',
   '37.223.15.63'

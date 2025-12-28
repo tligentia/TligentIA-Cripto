@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Key, ShieldCheck, RefreshCcw, Eye, EyeOff, ExternalLink, Lock, Database, Loader2, CheckCircle2, XCircle, Sparkles, Send, Table, Cpu, ChevronDown, Globe, Plus, Zap } from 'lucide-react';
-import { getShortcutKey, crypto, validateKey, listAvailableModels, askGemini } from './Parameters';
+import { getShortcutKey, crypto, validateKey, listAvailableModels, askGemini, AUTHORIZED_DOMAIN } from './Parameters';
 import { Obfuscator } from './Obfuscator';
 
 interface AjustesProps {
@@ -37,7 +37,7 @@ export const Ajustes: React.FC<AjustesProps> = ({ isOpen, onClose, apiKey, onApi
   });
 
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isAuthorized = !hostname || hostname === 'localhost' || hostname === 'hello.tligent.com';
+  const isAuthorized = !hostname || hostname === 'localhost' || hostname === AUTHORIZED_DOMAIN;
   const isCurrentIpMemorized = userIp ? memorizedIps.includes(crypto.obfuscate(userIp, "tligent")) : false;
 
   const loadModels = async () => {
