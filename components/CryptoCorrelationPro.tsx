@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Brain, Search, RefreshCw, ArrowRightLeft, Info, BarChart3, Loader2, AlertCircle, Layers, ChevronDown, ChevronUp, Droplets, Target, Calculator, MousePointerClick, ArrowUpDown, ShieldCheck, Zap, AlertTriangle, Flame } from 'lucide-react';
-import { fetchHistoricalSeries, HistoryPoint } from '../services/market';
+// Remove HistoryPoint as it's not exported from services/market and is unused in this file
+import { fetchHistoricalSeries } from '../services/market';
 import { CURRENCIES, TOP_STOCKS } from '../constants';
 import { Asset } from '../types';
 import PearsonModal from './PearsonModal';
@@ -47,7 +47,7 @@ const calculatePearsonCorrelation = (arrX: number[], arrY: number[]) => {
     sumY2 += y * y;
   }
 
-  const numerator = (n * sumXY) - (sumX * sumY);
+  const numerator = (n * sumXY) - (sumX) * (sumY);
   const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
 
   if (denominator === 0) return 0;
