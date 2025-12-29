@@ -5,11 +5,11 @@ import { obfuscate, deobfuscate } from './Cypto';
 
 // --- SYSTEM CONFIG ---
 export const AUTHORIZED_DOMAIN = 'hello.tligent.com';
-const SHEET_ID = '1wJkM8rmiXCrnB0K4h9jtme0m7f5I3y1j1PX5nmEaTII';
-// URL para la pestaña "Acciones" con bypass de caché
-export const ASSETS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Acciones&t=${Date.now()}`;
 
-export const ALLOWED_IPS = ['79.112.85.173', '37.223.15.63'];
+export const ALLOWED_IPS = [
+  '79.112.85.173',
+  '37.223.15.63'
+];
 
 export const COLORS = {
   bg: 'bg-white',
@@ -28,16 +28,28 @@ export const COLORS = {
   aiBorder: 'border-gray-200'
 };
 
-// --- ACTIVOS DE FALLBACK ---
-export const FALLBACK_CRYPTOS: Asset[] = [
+export const DEFAULT_ASSETS: Asset[] = [
   { symbol: 'BTC', name: 'Bitcoin', type: 'CRYPTO' },
   { symbol: 'ETH', name: 'Ethereum', type: 'CRYPTO' },
   { symbol: 'SOL', name: 'Solana', type: 'CRYPTO' },
+  { symbol: 'XRP', name: 'Ripple', type: 'CRYPTO' },
+  { symbol: 'BNB', name: 'Binance Coin', type: 'CRYPTO' },
+  { symbol: 'AAVE', name: 'Aave', type: 'CRYPTO' },
+  { symbol: 'JUP', name: 'Jupiter', type: 'CRYPTO' },
+  { symbol: 'ZEC', name: 'ZCash', type: 'CRYPTO' },
+  { symbol: 'UNI', name: 'Uniswap', type: 'CRYPTO' },
+  { symbol: 'DOGE', name: 'Dogecoin', type: 'CRYPTO' },
 ];
 
-export const FALLBACK_STOCKS: Asset[] = [
+export const TOP_STOCKS: Asset[] = [
   { symbol: 'SPY', name: 'S&P 500 ETF', type: 'STOCK' },
   { symbol: 'NVDA', name: 'NVIDIA Corp', type: 'STOCK' },
+  { symbol: 'AAPL', name: 'Apple Inc', type: 'STOCK' },
+  { symbol: 'MSFT', name: 'Microsoft', type: 'STOCK' },
+  { symbol: 'AMZN', name: 'Amazon', type: 'STOCK' },
+  { symbol: 'GOOGL', name: 'Alphabet (Google)', type: 'STOCK' },
+  { symbol: 'META', name: 'Meta Platforms', type: 'STOCK' },
+  { symbol: 'TSLA', name: 'Tesla Inc', type: 'STOCK' },
 ];
 
 export const STAGES: Record<number, StageConfig> = {
@@ -55,68 +67,23 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
   ETH: { code: 'ETH', symbol: 'Ξ', name: 'Ethereum', isCrypto: true },
 };
 
-// --- MOTOR DE PARSEO DE CSV PARA IDENTIFICACIÓN POR TICKER ---
-
-const parseCSVLine = (line: string): string[] => {
-  const columns: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') inQuotes = !inQuotes;
-    else if (char === ',' && !inQuotes) {
-      columns.push(current.trim());
-      current = '';
-    } else current += char;
-  }
-  columns.push(current.trim());
-  return columns.map(col => col.replace(/^"|"$/g, '').trim());
+// --- UTILITIES ---
+export const crypto = {
+  obfuscate,
+  deobfuscate
 };
 
-export const fetchRemoteAssets = async (): Promise<{ all: Asset[], success: boolean }> => {
-  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(ASSETS_CSV_URL)}`;
-  try {
-    const response = await fetch(proxyUrl);
-    if (!response.ok) throw new Error('Net Error');
-    const text = await response.text();
-    const rows = text.split(/\r?\n/).filter(line => line.trim() !== '');
-    
-    if (rows.length < 2) return { all: [], success: false };
-
-    const headers = parseCSVLine(rows[0]).map(h => h.toLowerCase());
-    const tickerIdx = headers.findIndex(h => h.includes('ticker') || h.includes('símbolo') || h.includes('symbol'));
-    const nameIdx = headers.findIndex(h => h.includes('nombre') || h.includes('name'));
-    const typeIdx = headers.findIndex(h => h.includes('tipo') || h.includes('type'));
-
-    const allAssets: Asset[] = [];
-
-    rows.slice(1).forEach(row => {
-      const cols = parseCSVLine(row);
-      const symbol = cols[tickerIdx !== -1 ? tickerIdx : 0]?.toUpperCase();
-      const name = cols[nameIdx !== -1 ? nameIdx : 1];
-      const typeStr = cols[typeIdx !== -1 ? typeIdx : 2]?.toUpperCase();
-
-      if (symbol && name) {
-        const isStock = ['STOCK', 'ACCION', 'BOLSA', 'YAHOO'].some(t => typeStr?.includes(t));
-        allAssets.push({ 
-          symbol, 
-          name, 
-          type: isStock ? 'STOCK' : 'CRYPTO' 
-        });
-      }
-    });
-
-    return { all: allAssets, success: allAssets.length > 0 };
-  } catch (error) {
-    console.warn("Sync fallido: Usando base local.");
-    return { all: [], success: false };
-  }
+const getSystemSLD = (): string => {
+  if (typeof window === 'undefined') return "localhost";
+  const hostname = window.location.hostname;
+  if (!hostname || hostname === 'localhost' || !hostname.includes('.')) return 'localhost';
+  const parts = hostname.split('.');
+  return parts[parts.length - 2];
 };
-
-export const crypto = { obfuscate, deobfuscate };
 
 export const getShortcutKey = (key: string): string | null => {
   const lowerKey = key.toLowerCase().trim();
+  
   if (lowerKey === 'ok') {
     const secret = "NSUTBjYXNicpJlE3BxYWXhhSCFhFPzNQVyYZOBI5PR8ECg41Lw4i";
     return crypto.deobfuscate(secret, "tligent");
@@ -133,14 +100,23 @@ export const getAllowedIps = (): string[] => {
   return Array.from(new Set([...ALLOWED_IPS, ...userIps]));
 };
 
+export const saveAllowedIps = (ips: string[]): void => {
+  const userOnlyIps = ips.filter(ip => !ALLOWED_IPS.includes(ip));
+  localStorage.setItem('criptogo_allowed_ips', JSON.stringify(userOnlyIps));
+};
+
+// --- GEMINI API INTEGRATION ---
 const getAI = (key?: string) => new GoogleGenAI({ apiKey: key || process.env.API_KEY || '' });
 
 export const askGemini = async (prompt: string, modelOverride?: string, key?: string): Promise<string> => {
   try {
     const ai = getAI(key);
     const model = modelOverride || localStorage.getItem('app_selected_model') || 'gemini-3-flash-preview';
-    const response = await ai.models.generateContent({ model, contents: prompt });
-    return response.text || "Sin respuesta.";
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+    });
+    return response.text || "Sin respuesta del oráculo.";
   } catch (error) {
     console.error("Gemini Error:", error);
     throw error;
@@ -150,15 +126,26 @@ export const askGemini = async (prompt: string, modelOverride?: string, key?: st
 export const validateKey = async (key?: string): Promise<boolean> => {
   const keyToTest = key || process.env.API_KEY;
   if (!keyToTest) return false;
+  
   try {
     const ai = getAI(keyToTest);
-    const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: 'ping' });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: 'ping',
+    });
     return !!response.text;
   } catch (err) {
+    console.warn("Validation failed for key:", keyToTest ? "PROVIDED" : "MISSING");
     return false;
   }
 };
 
 export const listAvailableModels = async (): Promise<string[]> => {
-  return ['gemini-3-flash-preview', 'gemini-3-pro-preview', 'gemini-flash-lite-latest'];
+  return [
+    'gemini-3-flash-preview',
+    'gemini-3-pro-preview',
+    'gemini-flash-lite-latest',
+    'gemini-2.5-flash-image',
+    'gemini-2.5-flash-preview-tts'
+  ];
 };

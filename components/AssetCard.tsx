@@ -206,8 +206,8 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
       if (val !== undefined) setRsiModalData({ value: val, timeframe: label });
   };
 
-  if (loading) return <div className="p-6 rounded-lg border border-gray-200 bg-white animate-pulse h-64" />;
-  if (error || !data) return <div className="p-4 rounded-lg border border-red-200 bg-red-50 flex justify-between"><span className="font-bold text-red-900">{asset.symbol}</span><button onClick={() => onDelete(asset.symbol)}><Trash2 size={18} /></button></div>;
+  if (loading) return <div id={`asset-card-${asset.symbol}`} className="p-6 rounded-lg border border-gray-200 bg-white animate-pulse h-64" />;
+  if (error || !data) return <div id={`asset-card-${asset.symbol}`} className="p-4 rounded-lg border border-red-200 bg-red-50 flex justify-between"><span className="font-bold text-red-900">{asset.symbol}</span><button onClick={() => onDelete(asset.symbol)}><Trash2 size={18} /></button></div>;
 
   const { daily, weekly, monthly } = data;
   const dist = daily.ma20 ? ((daily.price - daily.ma20) / daily.ma20) * 100 : 0;
