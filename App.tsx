@@ -41,7 +41,7 @@ export default function App() {
     return (saved as AssetType) || 'CRYPTO';
   });
 
-  // Assets initialization with Fallback logic
+  // Assets initialization
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isAssetsLoaded, setIsAssetsLoaded] = useState(false);
 
@@ -51,7 +51,6 @@ export default function App() {
         if (saved) {
             setAssets(JSON.parse(saved));
         } else {
-            // Try fetch from Google Sheet
             const sheetAssets = await fetchAssetsFromSheet();
             if (sheetAssets && sheetAssets.length > 0) {
                 setAssets(sheetAssets);
@@ -64,7 +63,6 @@ export default function App() {
     initAssets();
   }, []);
 
-  // Save assets to local storage only after initial load
   useEffect(() => {
       if (isAssetsLoaded) {
           localStorage.setItem('criptogo_real_assets', JSON.stringify(assets));
@@ -83,53 +81,47 @@ export default function App() {
   const [isAdding, setIsAdding] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Robust Scroll Logic with Polling and Highlight
+  // Sync rates on startup and manual refresh
+  useEffect(() => {
+      const getRates = async () => {
+          const freshRates = await fetchExchangeRates();
+          setRates(freshRates);
+      };
+      getRates();
+  }, [refreshTrigger]);
+
   useEffect(() => {
     if (view === 'dashboard' && scrollToSymbol) {
         let attempts = 0;
         const intervalId = setInterval(() => {
             const element = document.getElementById(`asset-card-${scrollToSymbol}`);
             if (element) {
-                // Element found, perform scroll (to START to avoid sticky header overlap issues with center)
                 element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                
-                // Visual feedback
                 element.classList.add('ring-4', 'ring-red-500/30', 'transition-all', 'duration-700');
-                setTimeout(() => {
-                    element.classList.remove('ring-4', 'ring-red-500/30');
-                }, 2000);
-
+                setTimeout(() => { element.classList.remove('ring-4', 'ring-red-500/30'); }, 2000);
                 setScrollToSymbol(null);
                 clearInterval(intervalId);
             } else {
                 attempts++;
-                // Stop trying after 2 seconds (20 attempts * 100ms)
                 if (attempts >= 20) {
                     clearInterval(intervalId);
                     setScrollToSymbol(null);
                 }
             }
         }, 100);
-
         return () => clearInterval(intervalId);
     }
   }, [view, scrollToSymbol]);
 
-  // Auto-focus input when switching to dashboard view (only if NOT scrolling to symbol)
   useEffect(() => {
-    // Only focus if we are NOT currently trying to scroll to a symbol.
-    // We remove scrollToSymbol from dependency array to prevent re-triggering when it becomes null after scroll.
     if (view === 'dashboard' && !scrollToSymbol && inputRef.current) {
         const timer = setTimeout(() => {
             inputRef.current?.focus();
-            // Scroll to top of form area if needed
-            inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 300);
         return () => clearTimeout(timer);
     }
-  }, [view]); // Removed scrollToSymbol to prevent autofocus after scroll completes
+  }, [view]);
 
-  // Auto-refresh logic
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
@@ -139,7 +131,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
-  // IP Fetching
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
       .then(res => res.json())
@@ -152,7 +143,6 @@ export default function App() {
       .catch(e => console.error("IP check failed", e));
   }, []);
 
-  // Validation of Key
   useEffect(() => {
     const check = async () => {
       if (!apiKey) {
@@ -184,11 +174,6 @@ export default function App() {
   useEffect(() => { localStorage.setItem('criptogo_favorites', JSON.stringify(favorites)); }, [favorites]);
   useEffect(() => { localStorage.setItem('criptogo_currency', currency); }, [currency]);
   useEffect(() => { localStorage.setItem('criptogo_market_mode', marketMode); }, [marketMode]);
-
-  useEffect(() => {
-      const getRates = async () => setRates(await fetchExchangeRates());
-      getRates();
-  }, [refreshTrigger]);
 
   const visibleAssets = useMemo(() => {
     let list: Asset[] = [];
@@ -272,25 +257,31 @@ export default function App() {
       onApiKeySave={handleApiKeySave} 
       userIp={userIp} 
       isKeyValid={isKeyValid}
+      currency={currency}
+      onCurrencyChange={setCurrency}
+      rates={rates}
     >
       <div className="space-y-8 pb-20">
         
-        {/* Navegación de Vistas */}
-        <div className="flex bg-gray-100 p-1 rounded-xl w-fit mx-auto shadow-inner border border-gray-200/50">
-            {[
-                { id: 'overview', label: 'Resumen', icon: LayoutGrid },
-                { id: 'dashboard', label: 'Análisis', icon: BrainCircuit },
-                { id: 'correlation', label: 'Correlación', icon: Sparkles },
-                { id: 'guia', label: 'Guía DeFi', icon: BrainCircuit }
-            ].map(tab => (
-                <button 
-                  key={tab.id}
-                  onClick={() => setView(tab.id as any)}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${view === tab.id ? 'bg-white text-red-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  <tab.icon size={14} /> {tab.label}
-                </button>
-            ))}
+        {/* Navegación Global */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-10">
+            {/* Pestañas de Vista */}
+            <div className="flex bg-gray-100 p-1 rounded-xl w-fit shadow-inner border border-gray-200/50">
+                {[
+                    { id: 'overview', label: 'Resumen', icon: LayoutGrid },
+                    { id: 'dashboard', label: 'Análisis', icon: BrainCircuit },
+                    { id: 'correlation', label: 'Correlación', icon: Sparkles },
+                    { id: 'guia', label: 'Guía DeFi', icon: BrainCircuit }
+                ].map(tab => (
+                    <button 
+                      key={tab.id}
+                      onClick={() => setView(tab.id as any)}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${view === tab.id ? 'bg-white text-red-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                      <tab.icon size={14} /> {tab.label}
+                    </button>
+                ))}
+            </div>
         </div>
 
         {view === 'overview' && (
