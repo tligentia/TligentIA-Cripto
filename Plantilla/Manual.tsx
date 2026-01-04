@@ -7,7 +7,6 @@ import {
   TrendingDown, Minus, LayoutGrid, BrainCircuit, Lightbulb, Scale,
   LineChart, AlertTriangle, ArrowUpRight, Gauge, Star, ArrowUpToLine, ArrowDownToLine,
   Building2, Users, ExternalLink, Share2, Calculator, ArrowUpDown, MessageSquare, Flame,
-  /* Fixed missing imports for UIClip section */
   RefreshCw, Trash2
 } from 'lucide-react';
 import { APP_VERSION } from './Version';
@@ -105,7 +104,7 @@ export const Manual: React.FC<ManualProps> = ({ isOpen, onClose }) => {
               <BookOpen size={24} />
             </div>
             <div>
-              <h3 className="font-black text-gray-900 uppercase tracking-tighter text-2xl leading-none">Manual Maestro</h3>
+              <h3 className="font-black text-gray-900 uppercase tracking-tighter text-2xl leading-none">Manual</h3>
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em] mt-1 hidden sm:block">Protocolo Operativo • Edición {APP_VERSION}</p>
             </div>
           </div>
@@ -119,7 +118,7 @@ export const Manual: React.FC<ManualProps> = ({ isOpen, onClose }) => {
           {/* SIDEBAR NAVIGATION */}
           <aside className={`absolute md:relative z-20 w-80 h-full bg-gray-50/30 border-r border-gray-100 flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
             <div className="p-8 space-y-2 overflow-y-auto">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-6 px-4">Índice Técnico</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-6 px-4">Índice</p>
               {SECTIONS.map((section) => (
                 <button 
                   key={section.id} 
@@ -201,7 +200,7 @@ export const Manual: React.FC<ManualProps> = ({ isOpen, onClose }) => {
                         Analizamos tres marcos temporales simultáneamente para evitar señales falsas. Cada tarjeta de periodo muestra la **Etapa Algorítmica**, el **RSI (Fuerza Relativa)** y los **Puntos Pivote**.
                     </p>
                     <ul className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-gray-600">
-                      <li className="flex gap-3 items-start"><CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" /> <div><strong>RSI:</strong> Se torna ROJO en sobrecompra (>70) y VERDE en sobreventa (&lt;30).</div></li>
+                      <li className="flex gap-3 items-start"><CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" /> <div><strong>RSI:</strong> Se torna ROJO en sobrecompra (&gt;70) y VERDE en sobreventa (&lt;30).</div></li>
                       <li className="flex gap-3 items-start"><CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" /> <div><strong>Pivotes (R1/S1):</strong> Niveles matemáticos de soporte (suelo) y resistencia (techo) para el periodo.</div></li>
                     </ul>
 
@@ -274,7 +273,7 @@ export const Manual: React.FC<ManualProps> = ({ isOpen, onClose }) => {
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-emerald-900 font-black text-sm">2</div>
                     </div>
                     <p className="text-xs text-emerald-100/70 leading-relaxed relative z-10">
-                      Tendencia fuerte confirmeda. La MA20 apunta hacia arriba y el precio cotiza con fuerza por encima. Es la zona de máxima rentabilidad. **Acción: Comprar.**
+                      Tendencia fuerte confirmada. La MA20 apunta hacia arriba y el precio cotiza con fuerza por encima. Es la zona de máxima rentabilidad. **Acción: Comprar.**
                     </p>
                   </div>
                 </div>
@@ -416,12 +415,13 @@ export const Manual: React.FC<ManualProps> = ({ isOpen, onClose }) => {
                     <Search size={18} className="text-red-700" /> Búsqueda IA Inteligente
                   </h5>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    Utiliza el símbolo <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono font-black text-red-700">?</code> en el buscador para que la IA te recomiende activos con el mejor **Momentum** actual.
+                    Utiliza el buscador con comandos especiales para que la IA te recomiende activos con el mejor **Momentum** actual.
                   </p>
-                  <ul className="text-[10px] text-gray-400 space-y-1.5 list-disc pl-4">
-                    <li><code className="text-gray-900 font-bold">?+</code> Crecimiento acelerado a corto plazo.</li>
-                    <li><code className="text-gray-900 font-bold">?++</code> Tendencia estructural sólida a medio plazo.</li>
-                    <li><code className="text-gray-900 font-bold">?-</code> Activos altamente volátiles / especulativos.</li>
+                  <ul className="text-[10px] text-gray-400 space-y-2 list-none">
+                    <li className="flex items-center gap-3"><code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono font-black text-red-700 w-10 text-center">?</code> <span>Mejor valor equilibrado (Best Setup).</span></li>
+                    <li className="flex items-center gap-3"><code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono font-black text-red-700 w-10 text-center">?+</code> <span>Crecimiento acelerado a corto plazo (Short Term).</span></li>
+                    <li className="flex items-center gap-3"><code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono font-black text-red-700 w-10 text-center">?++</code> <span>Tendencia estructural sólida a medio plazo (Structural).</span></li>
+                    <li className="flex items-center gap-3"><code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono font-black text-red-700 w-10 text-center">?-</code> <span>Activos altamente volátiles / "High Risk High Reward".</span></li>
                   </ul>
                 </div>
                 <div className="space-y-4 bg-gray-50 p-10 rounded-[3rem] border border-gray-100 shadow-inner flex flex-col justify-center">
@@ -474,15 +474,15 @@ export const Manual: React.FC<ManualProps> = ({ isOpen, onClose }) => {
                         <h5 className="font-black uppercase tracking-widest text-red-700 border-b border-red-50 pb-2 flex items-center gap-2"><LineChart size={14}/> Plataformas de Datos</h5>
                         <ul className="space-y-3 text-gray-500">
                             <li><strong className="text-gray-900">TradingView:</strong> Abre el gráfico técnico profesional con velas de 1 día y medias móviles automáticas.</li>
-                            <li><strong className="text-gray-900">Yahoo/Investing:</strong> Consulta el sentimiento de mercado minorista y noticias corporativas/económicas.</li>
-                            <li><strong className="text-gray-900">CoinMarketCap:</strong> Salta directo a la ficha técnica: Market Cap, Suministro circulante y Rankings.</li>
+                            <li><strong className="text-gray-900">Yahoo Finanzas:</strong> Acceso a estados financieros, sentimiento de mercado minorista y noticias corporativas/económicas.</li>
+                            <li><strong className="text-gray-900">CoinMarketCap:</strong> Salta directo a la ficha técnica: Market Cap, Suministro circulante, rankings y comparativas directas.</li>
                         </ul>
                     </div>
                     <div className="space-y-4">
-                        <h5 className="font-black uppercase tracking-widest text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2"><Sparkles size={14}/> Consultas IA Pro</h5>
+                        <h5 className="font-black uppercase tracking-widest text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2"><Sparkles size={14}/> Motores de Consulta IA</h5>
                         <ul className="space-y-3 text-gray-500">
-                            <li><strong className="text-gray-900">ChatGPT/Grok:</strong> Abre un chat con un prompt pre-configurado que incluye precio y RSI actual para un análisis de contexto.</li>
-                            <li><strong className="text-gray-900">Perplexity:</strong> Realiza una búsqueda en internet en tiempo real para detectar noticias de última hora sobre el activo.</li>
+                            <li><strong className="text-gray-900">ChatGPT / Grok:</strong> Se abre un chat con un prompt pre-inyectado que solicita un análisis experto técnico y fundamental del activo.</li>
+                            <li><strong className="text-gray-900">Perplexity:</strong> Realiza una búsqueda en internet en tiempo real para detectar noticias de última hora o eventos "cisne negro" inminentes.</li>
                         </ul>
                     </div>
                   </div>

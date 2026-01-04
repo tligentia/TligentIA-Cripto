@@ -330,7 +330,7 @@ export default function App() {
                                         type="text" 
                                         value={newSymbol} 
                                         onChange={(e) => setNewSymbol(e.target.value)}
-                                        placeholder="Símbolo (BTC, NVDA...) o '?' para IA"
+                                        placeholder="Símbolo o '?', '?+', '?++', '?-' para IA"
                                         className="w-full bg-gray-50 border border-gray-200 p-3.5 pl-11 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-red-700/20 outline-none transition-all"
                                     />
                                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
