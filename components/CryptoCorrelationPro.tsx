@@ -47,7 +47,7 @@ const calculatePearsonCorrelation = (arrX: number[], arrY: number[]) => {
     sumY2 += y * y;
   }
 
-  const numerator = (n * sumXY) - (sumX * sumY);
+  const numerator = (n * sumXY) - (sumX) * (sumY);
   const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
 
   if (denominator === 0) return 0;
@@ -444,13 +444,28 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
         {/* Left Column: Scanner */}
         <div className="lg:col-span-3 flex flex-col gap-4">
             <div className={`bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col transition-all duration-300 ${isScannerOpen ? 'h-full max-h-[600px] lg:max-h-none' : 'h-auto'}`}>
-                <div onClick={() => setIsScannerOpen(!isScannerOpen)} className="p-3 border-b border-gray-100 bg-gray-50/50 flex flex-col gap-3 cursor-pointer hover:bg-gray-100">
+                <div className="p-3 border-b border-gray-100 bg-gray-50/50 flex flex-col gap-3">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Search size={14} className="text-red-600" />Mejores Correlaciones</h2>
-                        {isScannerOpen ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsScannerOpen(!isScannerOpen)}>
+                            <Search size={14} className="text-red-600" />
+                            <h2 className="text-sm font-bold text-gray-900">Mejores Correlaciones</h2>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); runScanner(); }} 
+                                disabled={isScanning || isLoadingData} 
+                                className="text-[11px] font-black text-red-700 uppercase tracking-widest hover:text-red-800 transition-colors disabled:opacity-30 flex items-center gap-1.5"
+                            >
+                                {isScanning && <Loader2 size={12} className="animate-spin" />}
+                                {isScanning ? 'ESCANEANDO...' : 'BUSCAR'}
+                            </button>
+                            <button onClick={() => setIsScannerOpen(!isScannerOpen)} className="text-gray-400 hover:text-gray-600">
+                                {isScannerOpen ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex flex-col gap-2">
                         <div className="flex bg-gray-200/50 rounded-lg p-0.5 border border-gray-200 shadow-inner">
                             {TIMEFRAMES.map((tf) => (
                                 <button
@@ -466,14 +481,6 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                                 </button>
                             ))}
                         </div>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); runScanner(); }} 
-                            disabled={isScanning || isLoadingData} 
-                            className="w-full text-[10px] bg-red-700 text-white font-black py-2 rounded-lg hover:bg-red-800 disabled:opacity-50 transition-colors uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm"
-                        >
-                            {isScanning && <Loader2 size={12} className="animate-spin" />}
-                            {isScanning ? 'ESCANEANDO...' : 'BUSCAR CORRELACIONES'}
-                        </button>
                     </div>
 
                     {isScanning && <div className="w-full bg-gray-200 rounded-full h-1 mt-1"><div className="bg-red-600 h-1 rounded-full transition-all duration-300" style={{ width: `${scanProgress}%` }}></div></div>}
