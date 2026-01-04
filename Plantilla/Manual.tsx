@@ -255,49 +255,48 @@ export const Manual: React.FC<ManualProps> = ({ isOpen, onClose }) => {
                 Nuestro motor clasifica el comportamiento del precio en cuatro cuadrantes definidos por la interacción con la **Media Móvil de 20 periodos (MA20)**.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-6">
-                  <div className="p-8 rounded-[2.5rem] bg-emerald-50 border border-emerald-100 space-y-4 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                  <div className="p-8 rounded-[2.5rem] bg-emerald-50 border border-emerald-100 space-y-4 shadow-sm flex flex-col h-full">
                     <div className="flex items-center justify-between">
                       <h4 className="text-emerald-900 font-black text-[10px] uppercase tracking-[0.2em]">ETAPA 1: ACUMULACIÓN</h4>
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-emerald-600 font-black text-sm shadow-sm border border-emerald-100">1</div>
                     </div>
-                    <p className="text-xs text-emerald-800/80 leading-relaxed">
+                    <p className="text-xs text-emerald-800/80 leading-relaxed flex-1">
                       Lateralización horizontal. El precio abraza la MA20 sin dirección clara. Indica que las instituciones están construyendo posiciones. **Acción: Vigilar.**
                     </p>
                   </div>
-                  <div className="p-8 rounded-[2.5rem] bg-emerald-900 text-white space-y-4 shadow-2xl relative overflow-hidden">
+                  
+                  <div className="p-8 rounded-[2.5rem] bg-emerald-900 text-white space-y-4 shadow-2xl relative overflow-hidden flex flex-col h-full">
                     <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp size={80} /></div>
                     <div className="flex items-center justify-between relative z-10">
                       <h4 className="text-emerald-100 font-black text-[10px] uppercase tracking-[0.2em]">ETAPA 2: ALCISTA (MARKUP)</h4>
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-emerald-900 font-black text-sm">2</div>
                     </div>
-                    <p className="text-xs text-emerald-100/70 leading-relaxed relative z-10">
+                    <p className="text-xs text-emerald-100/70 leading-relaxed relative z-10 flex-1">
                       Tendencia fuerte confirmada. La MA20 apunta hacia arriba y el precio cotiza con fuerza por encima. Es la zona de máxima rentabilidad. **Acción: Comprar.**
                     </p>
                   </div>
-                </div>
-                <div className="space-y-6">
-                  <div className="p-8 rounded-[2.5rem] bg-orange-50 border border-orange-100 space-y-4 shadow-sm">
+
+                  <div className="p-8 rounded-[2.5rem] bg-orange-50 border border-orange-100 space-y-4 shadow-sm flex flex-col h-full">
                     <div className="flex items-center justify-between">
                       <h4 className="text-orange-900 font-black text-[10px] uppercase tracking-[0.2em]">ETAPA 3: DISTRIBUCIÓN</h4>
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-orange-600 font-black text-sm shadow-sm border border-orange-100">3</div>
                     </div>
-                    <p className="text-xs text-orange-800/80 leading-relaxed">
+                    <p className="text-xs text-orange-800/80 leading-relaxed flex-1">
                       El precio empieza a cruzar la MA20 con alta volatilidad. Las manos fuertes venden a los minoristas. Inseguridad de mercado. **Acción: Esperar.**
                     </p>
                   </div>
-                  <div className="p-8 rounded-[2.5rem] bg-red-50 border border-red-100 space-y-4 shadow-sm relative overflow-hidden">
+
+                  <div className="p-8 rounded-[2.5rem] bg-red-50 border border-red-100 space-y-4 shadow-sm relative overflow-hidden flex flex-col h-full">
                     <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingDown size={80} /></div>
                     <div className="flex items-center justify-between">
                       <h4 className="text-red-900 font-black text-[10px] uppercase tracking-[0.2em]">ETAPA 4: BAJISTA (MARKDOWN)</h4>
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-red-600 font-black text-sm shadow-sm border border-red-100">4</div>
                     </div>
-                    <p className="text-xs text-red-800/80 leading-relaxed">
+                    <p className="text-xs text-red-800/80 leading-relaxed flex-1">
                       La MA20 apunta hacia abajo y el precio es rechazado bajo ella. Fase de destrucción de capital y pánico. **Acción: Vender / Proteger.**
                     </p>
                   </div>
-                </div>
               </div>
             </section>
 
