@@ -23,6 +23,7 @@ interface Props {
   onMove: (symbol: string, direction: 'left' | 'right') => void;
   isFixed?: boolean;
   apiKey: string;
+  // Fix: changed from void to () => void to allow it to be called as a function
   onRequireKey: () => void;
 }
 
@@ -169,6 +170,7 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
   useEffect(() => { if (refreshTrigger > 0) fetchData(false); }, [refreshTrigger]);
 
   const callGeminiOracle = async () => { 
+    // Fix: onRequireKey is now a function and can be called
     if (!apiKey) { onRequireKey(); return; }
     if (!data) return;
     setAiLoading(true);
@@ -182,6 +184,7 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
   };
 
   const getMatrixInsight = async () => {
+    // Fix: onRequireKey is now a function and can be called
     if (!apiKey) { onRequireKey(); return; }
     if (!data) return;
     setMatrixLoading(true);
@@ -193,11 +196,13 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
   };
 
   const handleOpenFundamental = () => {
+      // Fix: onRequireKey is now a function and can be called
       if (!apiKey) { onRequireKey(); return; }
       setShowFundamental(true);
   };
 
   const handleOpenProfiles = () => {
+      // Fix: onRequireKey is now a function and can be called
       if (!apiKey) { onRequireKey(); return; }
       setShowProfiles(true);
   };
@@ -215,6 +220,9 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
   const convertedPrice = daily.price * rate;
   const digits = curConf.isCrypto ? 6 : (currency === 'JPY' ? 0 : 2);
   const formatPriceFull = (val: number) => val.toLocaleString('es-ES', { style: 'currency', currency: curConf.code, minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+  const ticker = asset.symbol;
+  const aiPrompt = encodeURIComponent(`Analiza de forma experta el activo ${asset.symbol} (${asset.name}). Proporciona un diagnóstico técnico y fundamental detallado.`);
 
   const cardContent = (isLarge: boolean) => (
     <div 
@@ -254,13 +262,15 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
         </div>
         
         {!isLarge && (
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <button onClick={callGeminiOracle} disabled={aiLoading} className="py-2 rounded-md bg-slate-950 text-white text-[10px] font-bold flex justify-center items-center gap-1 uppercase tracking-widest hover:bg-slate-800 transition-colors">{aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} Oráculo</button>
-            <button onClick={getMatrixInsight} disabled={matrixLoading} className="py-2 rounded-md bg-red-950 text-white text-[10px] font-bold flex justify-center items-center gap-1 uppercase tracking-widest hover:bg-red-800 transition-colors">
-              {matrixLoading ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} fill={matrixInsight ? "currentColor" : "none"} />} Insight</button>
-            <button onClick={handleOpenFundamental} className="py-2 rounded-md bg-blue-950 text-white text-[10px] font-bold flex justify-center items-center gap-1 uppercase tracking-widest hover:bg-blue-800 transition-colors"><Building2 size={12} /> Fundamental</button>
-            <button onClick={handleOpenProfiles} className="py-2 rounded-md bg-emerald-950 text-white text-[10px] font-bold flex justify-center items-center gap-1 uppercase tracking-widest hover:bg-emerald-800 transition-colors"><Users size={12} /> Estrategias</button>
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <button onClick={callGeminiOracle} disabled={aiLoading} className="py-2 rounded-md bg-slate-950 text-white text-[10px] font-bold flex justify-center items-center gap-1 uppercase tracking-widest hover:bg-slate-800 transition-colors">{aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} Oráculo</button>
+              <button onClick={getMatrixInsight} disabled={matrixLoading} className="py-2 rounded-md bg-red-950 text-white text-[10px] font-bold flex justify-center items-center gap-1 uppercase tracking-widest hover:bg-red-800 transition-colors">
+                {matrixLoading ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} fill={matrixInsight ? "currentColor" : "none"} />} Insight</button>
+              <button onClick={handleOpenFundamental} className="py-2 rounded-md bg-blue-950 text-white text-[10px] font-bold flex justify-center items-center gap-1 uppercase tracking-widest hover:bg-blue-800 transition-colors"><Building2 size={12} /> Fundamental</button>
+              <button onClick={handleOpenProfiles} className="py-2 rounded-md bg-emerald-950 text-white text-[10px] font-bold flex justify-center items-center gap-1 uppercase tracking-widest hover:bg-emerald-800 transition-colors"><Users size={12} /> Estrategias</button>
+            </div>
+          </>
         )}
 
         {matrixInsight && !isLarge && (
@@ -285,16 +295,47 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
       </div>
       
       {!isLarge && (
-        <div className="mt-2 border-t border-gray-100 pt-2 flex justify-end items-center">
+        <div className="mt-4 border-t border-gray-100 pt-3 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2.5">
+                  <a href={`https://www.tradingview.com/chart/?symbol=${ticker}`} target="_blank" rel="noreferrer" title="TradingView" className="text-blue-900 hover:text-red-700 transition-all">
+                      <i className="fa-solid fa-chart-line text-[11px]"></i>
+                  </a>
+                  <a href={`https://finance.yahoo.com/quote/${ticker}`} target="_blank" rel="noreferrer" title="Yahoo Finanzas" className="text-blue-900 hover:text-red-700 transition-all">
+                      <i className="fa-brands fa-yahoo text-[11px]"></i>
+                  </a>
+                  <a href={`https://es.investing.com/search/?q=${ticker}`} target="_blank" rel="noreferrer" title="Investing.com" className="text-blue-900 hover:text-red-700 transition-all">
+                      <i className="fa-solid fa-dollar-sign text-[11px]"></i>
+                  </a>
+                  <a href={`https://app.koyfin.com/search?q=${ticker}`} target="_blank" rel="noreferrer" title="Koyfin" className="text-blue-900 hover:text-red-700 transition-all">
+                      <i className="fa-solid fa-magnifying-glass-chart text-[11px]"></i>
+                  </a>
+              </div>
+              
+              <div className="w-px h-3 bg-gray-100"></div>
+
+              <div className="flex items-center gap-2.5">
+                  <a href={`https://chat.openai.com/?q=${aiPrompt}`} target="_blank" rel="noreferrer" title="Consultar ChatGPT" className="text-blue-900 hover:text-red-700 transition-all">
+                      <i className="fa-solid fa-robot text-[11px]"></i>
+                  </a>
+                  <a href={`https://grok.com/?q=${aiPrompt}`} target="_blank" rel="noreferrer" title="Consultar Grok" className="text-blue-900 hover:text-red-700 transition-all">
+                      <i className="fa-solid fa-bolt text-[11px]"></i>
+                  </a>
+                  <a href={`https://www.perplexity.ai/?q=${aiPrompt}`} target="_blank" rel="noreferrer" title="Consultar Perplexity" className="text-blue-900 hover:text-red-700 transition-all">
+                      <i className="fa-solid fa-infinity text-[11px]"></i>
+                  </a>
+              </div>
+          </div>
+
           <div className="flex gap-2 items-center">
               {!isFixed && (
                   <div className="flex bg-gray-100 rounded-md p-0.5 border border-gray-200 mr-1">
-                    <button onClick={() => onMove(asset.symbol, 'left')} disabled={index === 0} className="p-1 hover:bg-white rounded disabled:opacity-30 text-gray-600"><ChevronLeft size={10} /></button>
-                    <button onClick={() => onMove(asset.symbol, 'right')} disabled={index === total - 1} className="p-1 hover:bg-white rounded disabled:opacity-30 text-gray-600"><ChevronRight size={10} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onMove(asset.symbol, 'left'); }} disabled={index === 0} className="p-1 hover:bg-white rounded disabled:opacity-30 text-gray-600"><ChevronLeft size={10} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onMove(asset.symbol, 'right'); }} disabled={index === total - 1} className="p-1 hover:bg-white rounded disabled:opacity-30 text-gray-600"><ChevronRight size={10} /></button>
                   </div>
               )}
-              <button onClick={() => fetchData(false)} className="text-gray-300 hover:text-gray-900 p-1"><RefreshCw size={14} /></button>
-              {isFixed ? <div className="p-1 text-gray-200"><Lock size={14} /></div> : <button onClick={() => onDelete(asset.symbol)} className="text-gray-300 hover:text-red-700 p-1"><Trash2 size={14} /></button>}
+              <button onClick={(e) => { e.stopPropagation(); fetchData(false); }} className="text-gray-600 hover:text-gray-900 p-1"><RefreshCw size={14} /></button>
+              {isFixed ? <div className="p-1 text-gray-300"><Lock size={14} /></div> : <button onClick={(e) => { e.stopPropagation(); onDelete(asset.symbol); }} className="text-gray-600 hover:text-red-700 p-1"><Trash2 size={14} /></button>}
           </div>
         </div>
       )}
