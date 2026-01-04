@@ -23,7 +23,6 @@ interface Props {
   onMove: (symbol: string, direction: 'left' | 'right') => void;
   isFixed?: boolean;
   apiKey: string;
-  // Fix: changed from void to () => void to allow it to be called as a function
   onRequireKey: () => void;
 }
 
@@ -170,7 +169,6 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
   useEffect(() => { if (refreshTrigger > 0) fetchData(false); }, [refreshTrigger]);
 
   const callGeminiOracle = async () => { 
-    // Fix: onRequireKey is now a function and can be called
     if (!apiKey) { onRequireKey(); return; }
     if (!data) return;
     setAiLoading(true);
@@ -184,7 +182,6 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
   };
 
   const getMatrixInsight = async () => {
-    // Fix: onRequireKey is now a function and can be called
     if (!apiKey) { onRequireKey(); return; }
     if (!data) return;
     setMatrixLoading(true);
@@ -196,13 +193,11 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
   };
 
   const handleOpenFundamental = () => {
-      // Fix: onRequireKey is now a function and can be called
       if (!apiKey) { onRequireKey(); return; }
       setShowFundamental(true);
   };
 
   const handleOpenProfiles = () => {
-      // Fix: onRequireKey is now a function and can be called
       if (!apiKey) { onRequireKey(); return; }
       setShowProfiles(true);
   };
@@ -222,7 +217,13 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
   const formatPriceFull = (val: number) => val.toLocaleString('es-ES', { style: 'currency', currency: curConf.code, minimumFractionDigits: digits, maximumFractionDigits: digits });
 
   const ticker = asset.symbol;
+  const assetNameSlug = asset.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
   const aiPrompt = encodeURIComponent(`Analiza de forma experta el activo ${asset.symbol} (${asset.name}). Proporciona un diagnóstico técnico y fundamental detallado.`);
+
+  // URL de CoinMarketCap según el tipo de activo
+  const cmcUrl = asset.type === 'STOCK' 
+    ? `https://coinmarketcap.com/search/?q=${ticker}` 
+    : `https://coinmarketcap.com/currencies/${assetNameSlug}/`;
 
   const cardContent = (isLarge: boolean) => (
     <div 
@@ -309,6 +310,9 @@ const AssetCard: React.FC<Props> = ({ asset, onDelete, onToggleFavorite, refresh
                   </a>
                   <a href={`https://app.koyfin.com/search?q=${ticker}`} target="_blank" rel="noreferrer" title="Koyfin" className="text-blue-900 hover:text-red-700 transition-all">
                       <i className="fa-solid fa-magnifying-glass-chart text-[11px]"></i>
+                  </a>
+                  <a href={cmcUrl} target="_blank" rel="noreferrer" title="CoinMarketCap" className="text-blue-900 hover:text-red-700 transition-all">
+                      <i className="fa-solid fa-coins text-[11px]"></i>
                   </a>
               </div>
               

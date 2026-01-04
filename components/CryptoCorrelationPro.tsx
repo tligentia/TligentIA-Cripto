@@ -305,7 +305,6 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
     if (!apiKey) { onRequireKey(); return; }
     if (correlation === null) return;
     setIsAiSectionOpen(true); setIsAnalyzing(true); setAiAnalysis('');
-    // Actualizado con la nueva petición de gráfico comparativo
     let prompt = `Actúa como un analista financiero cuantitativo experto. Analiza la correlación MATEMÁTICA entre ${assetA.name} (${assetA.symbol}) y ${assetB.name} (${assetB.symbol}) y crea un grafico comparativo de sus comportamientos. Periodo analizado: ${timeframe.fullLabel}.`;
     if (customQuery.trim()) prompt += `\nCONSULTA: "${customQuery}"\n`;
     prompt += `Instrucciones: NO Markdown. Usa fuentes UNICODE para títulos. Breve y técnico.`;
@@ -341,7 +340,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
         if (score < 15) return { label: 'RIESGO BAJO', color: 'text-emerald-700 bg-emerald-100 border-emerald-200', icon: ShieldCheck };
         if (score < 40) return { label: 'RIESGO MEDIO', color: 'text-amber-700 bg-amber-100 border-amber-200', icon: AlertTriangle };
         if (score < 70) return { label: 'RIESGO ALTO', color: 'text-orange-700 bg-orange-100 border-orange-200', icon: Zap };
-        return { label: 'RIESGO EXTREMO', color: 'text-red-700 bg-red-100 border-red-200', icon: Flame };
+        return { label: 'RIESGO EXTREMO', color: 'text-red-700 bg-red-100 border-red-100', icon: Flame };
   };
 
   const formatCrypto = (val: number) => val < 0.0001 ? val.toLocaleString(undefined, { maximumFractionDigits: 9 }) : val.toLocaleString(undefined, { maximumFractionDigits: 6 });
@@ -350,8 +349,7 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
   // URL Logic for External Platforms
   const tickerA = assetA.symbol.toUpperCase();
   const tickerB = assetB.symbol.toUpperCase();
-  const nameSlugA = assetA.name.toLowerCase().replace(/\s+/g, '-');
-  // Actualizado para usar la nueva petición de gráfico comparativo en los links externos
+  const nameSlugA = assetA.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
   const aiPromptText = encodeURIComponent(`Analiza la correlación entre ${tickerA} y ${tickerB} y crea un grafico comparativo de sus comportamientos. Periodo: ${timeframe.fullLabel}. Riesgos y diversificación.`);
 
   // Custom Comparison URLs
@@ -359,6 +357,11 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
   const yahooUrl = `https://es.finance.yahoo.com/quote/${tickerB}-${tickerA}/`;
   const tradingViewUrl = `https://www.tradingview.com/symbols/${tickerB}${tickerA}/`;
   const koyfinUrl = `https://app.koyfin.com/search?q=${tickerA}%20${tickerB}`;
+  
+  // CoinMarketCap URL with comparison format requested
+  const cmcUrl = assetA.type === 'stock'
+    ? `https://coinmarketcap.com/search/?q=${tickerA}%20${tickerB}`
+    : `https://coinmarketcap.com/currencies/${nameSlugA}/?compare=${tickerB}`;
 
   return (
     <div className="font-sans text-gray-900 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -520,6 +523,9 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                           </a>
                           <a href={koyfinUrl} target="_blank" rel="noreferrer" title="Koyfin" className="text-blue-900 hover:text-red-700 transition-all">
                               <i className="fa-solid fa-magnifying-glass-chart text-[11px]"></i>
+                          </a>
+                          <a href={cmcUrl} target="_blank" rel="noreferrer" title="CoinMarketCap" className="text-blue-900 hover:text-red-700 transition-all">
+                              <i className="fa-solid fa-coins text-[11px]"></i>
                           </a>
                       </div>
                       <div className="w-px h-3 bg-gray-200"></div>
