@@ -18,10 +18,10 @@ const STABLE_ASSETS = [
 ];
 
 const TIMEFRAMES = [
-  { label: 'Semana', fullLabel: '1 Semana', days: 7 },
-  { label: 'Mes', fullLabel: '1 Mes', days: 30 },
-  { label: '3 Meses', fullLabel: '3 Meses', days: 90 },
-  { label: 'Año', fullLabel: '1 Año', days: 365 },
+  { label: '1S', fullLabel: '1 Semana', days: 7 },
+  { label: '1M', fullLabel: '1 Mes', days: 30 },
+  { label: '3M', fullLabel: '3 Meses', days: 90 },
+  { label: '1A', fullLabel: '1 Año', days: 365 },
 ];
 
 // Helper to create date key YYYY-MM-DD
@@ -305,7 +305,8 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
     if (!apiKey) { onRequireKey(); return; }
     if (correlation === null) return;
     setIsAiSectionOpen(true); setIsAnalyzing(true); setAiAnalysis('');
-    let prompt = `Actúa como un analista financiero cuantitativo experto. Analiza la correlación MATEMÁTICA de ${correlation.toFixed(4)} entre ${assetA.name} (${assetA.symbol}) y ${assetB.name} (${assetB.symbol}). Periodo analizado: ${timeframe.fullLabel}.`;
+    // Actualizado con la nueva petición de gráfico comparativo
+    let prompt = `Actúa como un analista financiero cuantitativo experto. Analiza la correlación MATEMÁTICA entre ${assetA.name} (${assetA.symbol}) y ${assetB.name} (${assetB.symbol}) y crea un grafico comparativo de sus comportamientos. Periodo analizado: ${timeframe.fullLabel}.`;
     if (customQuery.trim()) prompt += `\nCONSULTA: "${customQuery}"\n`;
     prompt += `Instrucciones: NO Markdown. Usa fuentes UNICODE para títulos. Breve y técnico.`;
     try {
@@ -350,8 +351,8 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
   const tickerA = assetA.symbol.toUpperCase();
   const tickerB = assetB.symbol.toUpperCase();
   const nameSlugA = assetA.name.toLowerCase().replace(/\s+/g, '-');
-  const corrVal = correlation?.toFixed(4) || "0.0000";
-  const aiPromptText = encodeURIComponent(`Analiza la correlación entre ${tickerA} y ${tickerB}. Pearson actual: ${corrVal}. Periodo: ${timeframe.fullLabel}. Riesgos y diversificación.`);
+  // Actualizado para usar la nueva petición de gráfico comparativo en los links externos
+  const aiPromptText = encodeURIComponent(`Analiza la correlación entre ${tickerA} y ${tickerB} y crea un grafico comparativo de sus comportamientos. Periodo: ${timeframe.fullLabel}. Riesgos y diversificación.`);
 
   // Custom Comparison URLs
   const investingUrl = `https://es.investing.com/crypto/${nameSlugA}/${tickerA.toLowerCase()}-${tickerB.toLowerCase()}-chart`;
@@ -444,34 +445,19 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
         {/* Left Column: Scanner */}
         <div className="lg:col-span-3 flex flex-col gap-4">
             <div className={`bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col transition-all duration-300 ${isScannerOpen ? 'h-full max-h-[600px] lg:max-h-none' : 'h-auto'}`}>
-                <div className="p-3 border-b border-gray-100 bg-gray-50/50 flex flex-col gap-3">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsScannerOpen(!isScannerOpen)}>
+                <div className="p-3 border-b border-gray-100 bg-gray-50/50 flex flex-col gap-1">
+                    <div className="flex justify-between items-center gap-2">
+                        <div className="flex items-center gap-1.5 cursor-pointer min-w-fit" onClick={() => setIsScannerOpen(!isScannerOpen)}>
                             <Search size={14} className="text-red-600" />
-                            <h2 className="text-sm font-bold text-gray-900">Mejores Correlaciones</h2>
+                            <h2 className="text-[11px] font-black uppercase text-gray-900 tracking-tight">Correlaciones</h2>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); runScanner(); }} 
-                                disabled={isScanning || isLoadingData} 
-                                className="text-[11px] font-black text-red-700 uppercase tracking-widest hover:text-red-800 transition-colors disabled:opacity-30 flex items-center gap-1.5"
-                            >
-                                {isScanning && <Loader2 size={12} className="animate-spin" />}
-                                {isScanning ? 'ESCANEANDO...' : 'BUSCAR'}
-                            </button>
-                            <button onClick={() => setIsScannerOpen(!isScannerOpen)} className="text-gray-400 hover:text-gray-600">
-                                {isScannerOpen ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <div className="flex bg-gray-200/50 rounded-lg p-0.5 border border-gray-200 shadow-inner">
+                        
+                        <div className="flex bg-gray-200/50 rounded-lg p-0.5 border border-gray-200 shadow-inner flex-1 max-w-[140px]" onClick={(e) => e.stopPropagation()}>
                             {TIMEFRAMES.map((tf) => (
                                 <button
                                     key={tf.label}
                                     onClick={() => setTimeframe(tf)}
-                                    className={`flex-1 text-[9px] font-black uppercase tracking-tight py-1.5 rounded-md transition-all ${
+                                    className={`flex-1 text-[8px] font-black uppercase py-1 rounded-md transition-all ${
                                         timeframe.label === tf.label
                                         ? 'bg-white text-red-700 shadow-sm ring-1 ring-black/5'
                                         : 'text-gray-400 hover:text-gray-600'
@@ -480,6 +466,20 @@ export default function CryptoCorrelationPro({ apiKey, onRequireKey, currency, r
                                     {tf.label}
                                 </button>
                             ))}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); runScanner(); }} 
+                                disabled={isScanning || isLoadingData} 
+                                className="text-[10px] font-black text-red-700 uppercase tracking-widest hover:text-red-800 transition-colors disabled:opacity-30 flex items-center gap-1"
+                            >
+                                {isScanning && <Loader2 size={10} className="animate-spin" />}
+                                {isScanning ? 'BUSCANDO' : 'BUSCAR'}
+                            </button>
+                            <button onClick={() => setIsScannerOpen(!isScannerOpen)} className="text-gray-400 hover:text-gray-600">
+                                {isScannerOpen ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                            </button>
                         </div>
                     </div>
 
